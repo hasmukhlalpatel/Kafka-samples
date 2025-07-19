@@ -3,72 +3,20 @@ using Confluent.Kafka;
 using Confluent.Kafka.SyncOverAsync;
 using Confluent.SchemaRegistry;
 using Confluent.SchemaRegistry.Serdes;
+using Kafka.Schemas.Shared;
 using Newtonsoft.Json; // For JsonConvert
 using Newtonsoft.Json.Linq; // For JObject
 
 namespace KafkaConsumerApp
 {
-    // Re-using the C# class definitions for deserialization
-    namespace com.example.schemas
-    {
-        public class Customer
-        {
-            public int Id { get; set; }
-            public string Name { get; set; }
-        }
-
-        public class Product
-        {
-            public int Id { get; set; }
-            public string Name { get; set; }
-        }
-        public class StandardProduct : Product
-        {
-            public string StandardProductFeatures { get; set; }
-        }
-        public class PremiumProduct : Product
-        {
-            public string PremiumProductFeatures { get; set; }
-        }
-
-        public class Contact
-        {
-            public int Id { get; set; }
-            public string Name { get; set; }
-        }
-
-        // Base OrderMessage class
-        public class OrderMessage
-        {
-            public Customer CustomerInfo { get; set; }
-            public Contact ContactInfo { get; set; }
-            public DateTimeOffset Timestamp { get; set; }
-        }
-
-        // Specific message types for the union, inheriting from OrderMessage
-        public class StandardOrderMessage : OrderMessage
-        {
-            public StandardProduct ProductInfo { get; set; }
-            public string StandardFeatures { get; set; }
-        }
-
-        public class PremiumOrderMessage : OrderMessage
-        {
-            public PremiumProduct ProductInfo { get; set; }
-            public int PremiumDiscountPercentage { get; set; }
-            public string DedicatedSupportContact { get; set; }
-        }
-    }
-
     public class Program
     {
         public static void Main(string[] args)
         {
-            string bootstrapServers = "localhost:9092";
-            string schemaRegistryUrl = "http://localhost:8081";
-            string topicName = "my-dotnet-union-json-topic"; // Topic for union schema
-            string groupId = "my-dotnet-union-json-consumer-group";
-
+            string bootstrapServers = KafkaConfig.Default.BootstrapServers;
+            string schemaRegistryUrl = KafkaConfig.Default.SchemaRegistryUrl;
+            string topicName = KafkaConfig.Default.TopicName;
+            string groupId = KafkaConfig.Default.ConsumerGroupId;
             var consumerConfig = new ConsumerConfig
             {
                 BootstrapServers = bootstrapServers,

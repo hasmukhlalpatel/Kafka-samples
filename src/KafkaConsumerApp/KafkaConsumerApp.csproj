@@ -11,4 +11,7 @@
 		<PackageReference Include="Confluent.SchemaRegistry.Serdes.Avro" Version="2.11.0" />
 		<PackageReference Include="Confluent.SchemaRegistry.Serdes.Json" Version="2.11.0" />
 	</ItemGroup>
+	<ItemGroup>
+	  <ProjectReference Include="..\Kafka.Schemas.Shared\Kafka.Schemas.Shared.csproj" />
+	</ItemGroup>
 </Project>

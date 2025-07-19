@@ -16,6 +16,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KafkaProducerApp", "src\Kaf
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KafkaConsumerApp", "src\KafkaConsumerApp\KafkaConsumerApp.csproj", "{BD698E88-037B-286E-CD05-8D9E86898864}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kafka.Schemas.Shared", "src\Kafka.Schemas.Shared\Kafka.Schemas.Shared.csproj", "{1D068A92-4336-409D-9535-74034CCF8D74}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,6 +32,10 @@ Global
 		{BD698E88-037B-286E-CD05-8D9E86898864}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BD698E88-037B-286E-CD05-8D9E86898864}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BD698E88-037B-286E-CD05-8D9E86898864}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1D068A92-4336-409D-9535-74034CCF8D74}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1D068A92-4336-409D-9535-74034CCF8D74}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1D068A92-4336-409D-9535-74034CCF8D74}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1D068A92-4336-409D-9535-74034CCF8D74}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -37,6 +43,7 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{DEA1A5B0-641C-7A3B-A993-560DAB8B7C4F} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{BD698E88-037B-286E-CD05-8D9E86898864} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{1D068A92-4336-409D-9535-74034CCF8D74} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {DB39DEA7-2A42-48CB-AF65-1797BC25C7C2}
