@@ -1,4 +1,5 @@
 ﻿
+using com.example.schemas;
 using Confluent.Kafka;
 using Confluent.Kafka.SyncOverAsync;
 using Confluent.SchemaRegistry;
@@ -37,8 +38,6 @@ namespace KafkaConsumerApp
             };
 
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-            // Build the consumer with JsonDeserializer for JObject
-            // We receive as JObject because the actual type is dynamic (Standard or Premium)
             using (var consumer = new ConsumerBuilder<Ignore, JObject>(consumerConfig)
                 .SetValueDeserializer(new JsonDeserializer<JObject>(schemaRegistry).AsSyncOverAsync())
                 .Build())
@@ -56,25 +55,27 @@ namespace KafkaConsumerApp
 
                             Console.WriteLine($"Consumed message from topic: {consumeResult.Topic}, partition: {consumeResult.Partition}, offset: {consumeResult.Offset}");
 
-                            // Dynamically determine the message type based on the presence of specific fields
-                            // and then deserialize into the correct concrete type.
-                            if (receivedJObject.ContainsKey("standardFeatures"))
+                            // First, try to deserialize to the base OrderMessage to get the OrderType
+                            var orderType = receivedJObject["OrderType"].ToString();
+
+                            // Now, use the OrderType property to determine the specific message type
+                            if (orderType == "StandardOrder")
                             {
-                                var standardOrder = receivedJObject.ToObject<com.example.schemas.StandardOrderMessage>();
+                                var standardOrder = receivedJObject.ToObject<StandardOrderMessage>();
                                 Console.WriteLine($"  Type: Standard Order");
                                 Console.WriteLine($"  Customer: {standardOrder.CustomerInfo.Name}, Product: {standardOrder.ProductInfo.Name} (Features: {standardOrder.ProductInfo.StandardProductFeatures})");
                                 Console.WriteLine($"  Standard Features: {standardOrder.StandardFeatures}");
                             }
-                            else if (receivedJObject.ContainsKey("premiumDiscountPercentage") && receivedJObject.ContainsKey("dedicatedSupportContact"))
+                            else if (orderType == "PremiumOrder")
                             {
-                                var premiumOrder = receivedJObject.ToObject<com.example.schemas.PremiumOrderMessage>();
+                                var premiumOrder = receivedJObject.ToObject<PremiumOrderMessage>();
                                 Console.WriteLine($"  Type: Premium Order");
                                 Console.WriteLine($"  Customer: {premiumOrder.CustomerInfo.Name}, Product: {premiumOrder.ProductInfo.Name} (Features: {premiumOrder.ProductInfo.PremiumProductFeatures})");
                                 Console.WriteLine($"  Premium Discount: {premiumOrder.PremiumDiscountPercentage}%, Support: {premiumOrder.DedicatedSupportContact}");
                             }
                             else
                             {
-                                Console.WriteLine($"  Type: Unknown Order Message");
+                                Console.WriteLine($"  Type: Unknown Order Message (OrderType: {orderType})");
                                 Console.WriteLine($"  Raw JSON: {receivedJObject.ToString(Formatting.Indented)}");
                             }
                         }
