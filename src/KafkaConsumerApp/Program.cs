@@ -1,7 +1,10 @@
-﻿using Confluent.Kafka;
+﻿
+using Confluent.Kafka;
 using Confluent.Kafka.SyncOverAsync;
 using Confluent.SchemaRegistry;
 using Confluent.SchemaRegistry.Serdes;
+using Newtonsoft.Json; // For JsonConvert
+using Newtonsoft.Json.Linq; // For JObject
 
 namespace KafkaConsumerApp
 {
@@ -19,6 +22,14 @@ namespace KafkaConsumerApp
             public int Id { get; set; }
             public string Name { get; set; }
         }
+        public class StandardProduct : Product
+        {
+            public string StandardProductFeatures { get; set; }
+        }
+        public class PremiumProduct : Product
+        {
+            public string PremiumProductFeatures { get; set; }
+        }
 
         public class Contact
         {
@@ -26,12 +37,26 @@ namespace KafkaConsumerApp
             public string Name { get; set; }
         }
 
+        // Base OrderMessage class
         public class OrderMessage
         {
             public Customer CustomerInfo { get; set; }
-            public Product ProductInfo { get; set; }
             public Contact ContactInfo { get; set; }
-            public DateTimeOffset Timestamp { get; set; } // Using DateTimeOffset directly
+            public DateTimeOffset Timestamp { get; set; }
+        }
+
+        // Specific message types for the union, inheriting from OrderMessage
+        public class StandardOrderMessage : OrderMessage
+        {
+            public StandardProduct ProductInfo { get; set; }
+            public string StandardFeatures { get; set; }
+        }
+
+        public class PremiumOrderMessage : OrderMessage
+        {
+            public PremiumProduct ProductInfo { get; set; }
+            public int PremiumDiscountPercentage { get; set; }
+            public string DedicatedSupportContact { get; set; }
         }
     }
 
@@ -39,42 +64,35 @@ namespace KafkaConsumerApp
     {
         public static void Main(string[] args)
         {
-            // Kafka broker address
-            string bootstrapServers = "localhost:9092"; // Change if your Kafka is elsewhere
-            // Schema Registry address
-            string schemaRegistryUrl = "http://localhost:8081"; // Change if your Schema Registry is elsewhere
-            string topicName = "my-dotnet-json-topic"; // Topic for JSON Schema messages
-            string groupId = "my-dotnet-json-consumer-group"; // Consumer group ID
+            string bootstrapServers = "localhost:9092";
+            string schemaRegistryUrl = "http://localhost:8081";
+            string topicName = "my-dotnet-union-json-topic"; // Topic for union schema
+            string groupId = "my-dotnet-union-json-consumer-group";
 
-            // Consumer configuration
             var consumerConfig = new ConsumerConfig
             {
                 BootstrapServers = bootstrapServers,
                 GroupId = groupId,
-                AutoOffsetReset = AutoOffsetReset.Earliest, // Start consuming from the beginning if no offset is stored
-                EnableAutoCommit = true // Automatically commit offsets
+                AutoOffsetReset = AutoOffsetReset.Earliest,
+                EnableAutoCommit = true
             };
 
-            // Schema Registry configuration
-            var schemaRegistryConfig = new SchemaRegistryConfig
-            {
-                Url = schemaRegistryUrl
-            };
+            var schemaRegistryConfig = new SchemaRegistryConfig { Url = schemaRegistryUrl };
 
             Console.WriteLine($"Starting Kafka Consumer for topic: {topicName}, group: {groupId}");
             Console.WriteLine($"Connecting to Schema Registry at: {schemaRegistryUrl}");
 
             CancellationTokenSource cts = new CancellationTokenSource();
             Console.CancelKeyPress += (_, e) => {
-                e.Cancel = true; // Prevent the process from terminating immediately
+                e.Cancel = true;
                 cts.Cancel();
             };
 
-            // Create a Schema Registry client
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-            // Build the consumer with JsonDeserializer for the OrderMessage type
-            using (var consumer = new ConsumerBuilder<Ignore, com.example.schemas.OrderMessage>(consumerConfig)
-                .SetValueDeserializer(new JsonDeserializer<com.example.schemas.OrderMessage>(schemaRegistry).AsSyncOverAsync())
+            // Build the consumer with JsonDeserializer for JObject
+            // We receive as JObject because the actual type is dynamic (Standard or Premium)
+            using (var consumer = new ConsumerBuilder<Ignore, JObject>(consumerConfig)
+                .SetValueDeserializer(new JsonDeserializer<JObject>(schemaRegistry).AsSyncOverAsync())
                 .Build())
             {
                 consumer.Subscribe(topicName);
@@ -85,17 +103,32 @@ namespace KafkaConsumerApp
                     {
                         try
                         {
-                            // Consume a message with a timeout
                             var consumeResult = consumer.Consume(cts.Token);
-
-                            // The JsonDeserializer handles deserialization into the OrderMessage object
-                            com.example.schemas.OrderMessage receivedMessage = consumeResult.Message.Value;
+                            JObject receivedJObject = consumeResult.Message.Value;
 
                             Console.WriteLine($"Consumed message from topic: {consumeResult.Topic}, partition: {consumeResult.Partition}, offset: {consumeResult.Offset}");
-                            Console.WriteLine($"  Customer: Id={receivedMessage.CustomerInfo.Id}, Name='{receivedMessage.CustomerInfo.Name}'");
-                            Console.WriteLine($"  Product: Id={receivedMessage.ProductInfo.Id}, Name='{receivedMessage.ProductInfo.Name}'");
-                            Console.WriteLine($"  Contact: Id={receivedMessage.ContactInfo.Id}, Name='{receivedMessage.ContactInfo.Name}'");
-                            Console.WriteLine($"  Timestamp: {receivedMessage.Timestamp.LocalDateTime}");
+
+                            // Dynamically determine the message type based on the presence of specific fields
+                            // and then deserialize into the correct concrete type.
+                            if (receivedJObject.ContainsKey("standardFeatures"))
+                            {
+                                var standardOrder = receivedJObject.ToObject<com.example.schemas.StandardOrderMessage>();
+                                Console.WriteLine($"  Type: Standard Order");
+                                Console.WriteLine($"  Customer: {standardOrder.CustomerInfo.Name}, Product: {standardOrder.ProductInfo.Name} (Features: {standardOrder.ProductInfo.StandardProductFeatures})");
+                                Console.WriteLine($"  Standard Features: {standardOrder.StandardFeatures}");
+                            }
+                            else if (receivedJObject.ContainsKey("premiumDiscountPercentage") && receivedJObject.ContainsKey("dedicatedSupportContact"))
+                            {
+                                var premiumOrder = receivedJObject.ToObject<com.example.schemas.PremiumOrderMessage>();
+                                Console.WriteLine($"  Type: Premium Order");
+                                Console.WriteLine($"  Customer: {premiumOrder.CustomerInfo.Name}, Product: {premiumOrder.ProductInfo.Name} (Features: {premiumOrder.ProductInfo.PremiumProductFeatures})");
+                                Console.WriteLine($"  Premium Discount: {premiumOrder.PremiumDiscountPercentage}%, Support: {premiumOrder.DedicatedSupportContact}");
+                            }
+                            else
+                            {
+                                Console.WriteLine($"  Type: Unknown Order Message");
+                                Console.WriteLine($"  Raw JSON: {receivedJObject.ToString(Formatting.Indented)}");
+                            }
                         }
                         catch (ConsumeException e)
                         {
@@ -103,7 +136,6 @@ namespace KafkaConsumerApp
                         }
                         catch (OperationCanceledException)
                         {
-                            // User pressed Ctrl+C
                             Console.WriteLine("Consumer shutting down...");
                         }
                         catch (Exception e)
@@ -114,7 +146,7 @@ namespace KafkaConsumerApp
                 }
                 finally
                 {
-                    consumer.Close(); // Commit offsets and leave the group cleanly
+                    consumer.Close();
                 }
             }
 
