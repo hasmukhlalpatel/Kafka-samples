@@ -1,12 +1,12 @@
-﻿
-using Confluent.Kafka;
+﻿using Confluent.Kafka;
 using Confluent.SchemaRegistry;
 using Confluent.SchemaRegistry.Serdes;
+using Newtonsoft.Json.Schema.Generation; // Required for JSchemaGenerator
 
 namespace KafkaProducerApp
 {
-    // Define the C# classes that correspond to your Avro schemas
-    // These will be serialized/deserialized by the Avro serializer/deserializer
+    // Define the C# classes that will be serialized to JSON
+    // These are now simple POCOs, no Avro-specific attributes or interfaces
     namespace com.example.schemas
     {
         public class Customer
@@ -32,8 +32,8 @@ namespace KafkaProducerApp
             public Customer CustomerInfo { get; set; }
             public Product ProductInfo { get; set; }
             public Contact ContactInfo { get; set; }
-            // Avro's 'timestamp-millis' logical type maps to long (milliseconds since Unix epoch) in C#
-            public long Timestamp { get; set; }
+            // Using DateTimeOffset for better handling of timestamps in .NET
+            public DateTimeOffset Timestamp { get; set; }
         }
     }
 
@@ -45,7 +45,7 @@ namespace KafkaProducerApp
             string bootstrapServers = "localhost:9092"; // Change if your Kafka is elsewhere
             // Schema Registry address
             string schemaRegistryUrl = "http://localhost:8081"; // Change if your Schema Registry is elsewhere
-            string topicName = "my-dotnet-avro-topic"; // New topic for Avro messages
+            string topicName = "my-dotnet-json-topic"; // New topic for JSON Schema messages
 
             // Producer configuration
             var producerConfig = new ProducerConfig
@@ -64,32 +64,63 @@ namespace KafkaProducerApp
 
             // Create a Schema Registry client
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-            // Build the producer with AvroSerializer for the OrderMessage type
-            using (var producer = new ProducerBuilder<Null, com.example.schemas.OrderMessage>(producerConfig)
-                .SetValueSerializer(new AvroSerializer<com.example.schemas.OrderMessage>(schemaRegistry))
-                .Build())
             {
                 try
                 {
-                    for (int i = 0; i < 3; i++) // Send 3 messages
+                    // --- Explicit JSON Schema Generation and Registration at Startup ---
+
+                    // Create a JSchemaGenerator instance
+                    var generator = new JSchemaGenerator();
+                    // Generate the JSON Schema from the C# OrderMessage class
+                    Newtonsoft.Json.Schema.JSchema jsonSchema = generator.Generate(typeof(com.example.schemas.OrderMessage));
+
+                    // Convert the JSchema object to its JSON string representation
+                    string jsonSchemaString = jsonSchema.ToString();
+
+                    // Define the subject name for the schema. For value schemas, it's typically "<topic-name>-value"
+                    string subject = $"{topicName}-value";
+
+                    Console.WriteLine($"Attempting to register JSON schema for subject: {subject}");
+                    Console.WriteLine($"Generated JSON Schema:\n{jsonSchemaString}");
+
+                    // Register the schema with the Schema Registry
+                    // Specify SchemaType.Json for JSON Schema
+                    var schema = new Confluent.SchemaRegistry.Schema(jsonSchemaString, SchemaType.Json);
+                    int schemaId = await schemaRegistry.RegisterSchemaAsync(subject, schema);
+                    Console.WriteLine($"JSON Schema registered successfully with ID: {schemaId}");
+
+                    // --- End Explicit JSON Schema Registration ---
+
+                    // Build the producer with JsonSerializer for the OrderMessage type
+                    using (var producer = new ProducerBuilder<Null, com.example.schemas.OrderMessage>(producerConfig)
+                        .SetValueSerializer(new JsonSerializer<com.example.schemas.OrderMessage>(schemaRegistry))
+                        .Build())
                     {
-                        var orderMessage = new com.example.schemas.OrderMessage
+                        for (int i = 0; i < 3; i++) // Send 3 messages
                         {
-                            CustomerInfo = new com.example.schemas.Customer { Id = 101 + i, Name = $"Customer {i + 1}" },
-                            ProductInfo = new com.example.schemas.Product { Id = 201 + i, Name = $"Product {i + 1}X" },
-                            ContactInfo = new com.example.schemas.Contact { Id = 301 + i, Name = $"Contact {i + 1}Y" },
-                            Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() // Convert DateTime to milliseconds since epoch
-                        };
+                            var orderMessage = new com.example.schemas.OrderMessage
+                            {
+                                CustomerInfo = new com.example.schemas.Customer { Id = 101 + i, Name = $"Customer {i + 1}" },
+                                ProductInfo = new com.example.schemas.Product { Id = 201 + i, Name = $"Product {i + 1}X" },
+                                ContactInfo = new com.example.schemas.Contact { Id = 301 + i, Name = $"Contact {i + 1}Y" },
+                                Timestamp = DateTimeOffset.UtcNow // Using DateTimeOffset directly
+                            };
 
-                        var deliveryResult = await producer.ProduceAsync(topicName, new Message<Null, com.example.schemas.OrderMessage> { Value = orderMessage });
+                            var deliveryResult = await producer.ProduceAsync(topicName, new Message<Null, com.example.schemas.OrderMessage> { Value = orderMessage });
 
-                        Console.WriteLine($"Delivered message to topic: {deliveryResult.Topic}, partition: {deliveryResult.Partition}, offset: {deliveryResult.Offset}");
-                        Console.WriteLine($"  Customer: {orderMessage.CustomerInfo.Name}, Product: {orderMessage.ProductInfo.Name}, Contact: {orderMessage.ContactInfo.Name}");
+                            Console.WriteLine($"Delivered message to topic: {deliveryResult.Topic}, partition: {deliveryResult.Partition}, offset: {deliveryResult.Offset}");
+                            Console.WriteLine($"  Customer: {orderMessage.CustomerInfo.Name}, Product: {orderMessage.ProductInfo.Name}, Contact: {orderMessage.ContactInfo.Name}");
+                        }
                     }
                 }
                 catch (ProduceException<Null, com.example.schemas.OrderMessage> e)
                 {
                     Console.WriteLine($"Delivery failed: {e.Error.Reason}");
+                }
+                catch (Confluent.SchemaRegistry.SchemaRegistryException e)
+                {
+                    Console.WriteLine($"Schema Registry error: {e.Message}");
+                    Console.WriteLine($"Error Code: {e.ErrorCode}");
                 }
                 catch (Exception e)
                 {

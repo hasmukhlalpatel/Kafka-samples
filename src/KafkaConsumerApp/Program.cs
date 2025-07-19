@@ -1,13 +1,7 @@
-﻿
-using Confluent.Kafka;
-using Confluent.Kafka.SchemaRegistry;
-using Confluent.Kafka.SchemaRegistry.Serdes;
+﻿using Confluent.Kafka;
 using Confluent.Kafka.SyncOverAsync;
 using Confluent.SchemaRegistry;
 using Confluent.SchemaRegistry.Serdes;
-using System;
-using System.Threading;
-using System.Threading.Tasks; // Added for Task.Run and async/await in Main
 
 namespace KafkaConsumerApp
 {
@@ -37,7 +31,7 @@ namespace KafkaConsumerApp
             public Customer CustomerInfo { get; set; }
             public Product ProductInfo { get; set; }
             public Contact ContactInfo { get; set; }
-            public long Timestamp { get; set; }
+            public DateTimeOffset Timestamp { get; set; } // Using DateTimeOffset directly
         }
     }
 
@@ -49,8 +43,8 @@ namespace KafkaConsumerApp
             string bootstrapServers = "localhost:9092"; // Change if your Kafka is elsewhere
             // Schema Registry address
             string schemaRegistryUrl = "http://localhost:8081"; // Change if your Schema Registry is elsewhere
-            string topicName = "my-dotnet-avro-topic"; // Topic for Avro messages
-            string groupId = "my-dotnet-avro-consumer-group"; // Consumer group ID
+            string topicName = "my-dotnet-json-topic"; // Topic for JSON Schema messages
+            string groupId = "my-dotnet-json-consumer-group"; // Consumer group ID
 
             // Consumer configuration
             var consumerConfig = new ConsumerConfig
@@ -78,9 +72,9 @@ namespace KafkaConsumerApp
 
             // Create a Schema Registry client
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-            // Build the consumer with AvroDeserializer for the OrderMessage type
+            // Build the consumer with JsonDeserializer for the OrderMessage type
             using (var consumer = new ConsumerBuilder<Ignore, com.example.schemas.OrderMessage>(consumerConfig)
-                .SetValueDeserializer(new AvroDeserializer<com.example.schemas.OrderMessage>(schemaRegistry).AsSyncOverAsync())
+                .SetValueDeserializer(new JsonDeserializer<com.example.schemas.OrderMessage>(schemaRegistry).AsSyncOverAsync())
                 .Build())
             {
                 consumer.Subscribe(topicName);
@@ -94,16 +88,14 @@ namespace KafkaConsumerApp
                             // Consume a message with a timeout
                             var consumeResult = consumer.Consume(cts.Token);
 
-                            // The AvroDeserializer handles deserialization into the OrderMessage object
+                            // The JsonDeserializer handles deserialization into the OrderMessage object
                             com.example.schemas.OrderMessage receivedMessage = consumeResult.Message.Value;
 
                             Console.WriteLine($"Consumed message from topic: {consumeResult.Topic}, partition: {consumeResult.Partition}, offset: {consumeResult.Offset}");
                             Console.WriteLine($"  Customer: Id={receivedMessage.CustomerInfo.Id}, Name='{receivedMessage.CustomerInfo.Name}'");
                             Console.WriteLine($"  Product: Id={receivedMessage.ProductInfo.Id}, Name='{receivedMessage.ProductInfo.Name}'");
                             Console.WriteLine($"  Contact: Id={receivedMessage.ContactInfo.Id}, Name='{receivedMessage.ContactInfo.Name}'");
-                            // Convert milliseconds since epoch back to DateTime for display
-                            DateTimeOffset timestamp = DateTimeOffset.FromUnixTimeMilliseconds(receivedMessage.Timestamp);
-                            Console.WriteLine($"  Timestamp: {timestamp.LocalDateTime}");
+                            Console.WriteLine($"  Timestamp: {receivedMessage.Timestamp.LocalDateTime}");
                         }
                         catch (ConsumeException e)
                         {
