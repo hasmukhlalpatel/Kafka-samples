@@ -6,7 +6,8 @@ using Confluent.SchemaRegistry;
 using Confluent.SchemaRegistry.Serdes;
 using Kafka.Schemas.Shared;
 using Newtonsoft.Json; // For JsonConvert
-using Newtonsoft.Json.Linq; // For JObject
+using Newtonsoft.Json.Linq;
+using System.Text; // For JObject
 
 namespace KafkaConsumerApp
 {
@@ -57,6 +58,18 @@ namespace KafkaConsumerApp
 
                             // First, try to deserialize to the base OrderMessage to get the OrderType
                             var orderType = receivedJObject["OrderType"].ToString();
+                            // --- Read Header Information ---
+                            string eventName = "N/A";
+                            if (consumeResult.Message.Headers != null)
+                            {
+                                var eventNameHeader = consumeResult.Message.Headers.FirstOrDefault(h => h.Key == "eventname");
+                                if (eventNameHeader != null)
+                                {
+                                    eventName = Encoding.UTF8.GetString(eventNameHeader.GetValueBytes());
+                                }
+                            }
+                            Console.WriteLine($"  Header 'eventname': {eventName}");
+                            // --- End Read Header Information ---
 
                             // Now, use the OrderType property to determine the specific message type
                             if (orderType == "StandardOrder")

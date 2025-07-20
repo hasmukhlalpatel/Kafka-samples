@@ -6,6 +6,7 @@ using Confluent.SchemaRegistry.Serdes;
 using Kafka.Schemas.Shared;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Text;
 using GenerateSchema = KafkaProducerApp.SchemaGenerator;
 
 namespace KafkaProducerApp
@@ -90,8 +91,13 @@ namespace KafkaProducerApp
                             StandardFeatures = "Email notifications"
                         };
                         JObject standardOrderJObject = JObject.FromObject(standardOrder);
-                        await producer.ProduceAsync(topicName, new Message<Null, JObject> { Value = standardOrderJObject });
-                        Console.WriteLine($"Delivered Standard Order: {standardOrder.CustomerInfo.Name}");
+
+                        // Create Headers and add eventname
+                        Headers standardHeaders = new Headers();
+                        standardHeaders.Add("eventname", Encoding.UTF8.GetBytes("StandardOrderCreated")); // Add eventname header
+
+                        await producer.ProduceAsync(topicName, new Message<Null, JObject> { Value = standardOrderJObject, Headers = standardHeaders });
+                        Console.WriteLine($"Delivered Standard Order: {standardOrder.CustomerInfo.Name} with eventname: StandardOrderCreated");
 
                         // Send a PremiumOrderMessage
                         var premiumOrder = new PremiumOrderMessage
@@ -104,8 +110,13 @@ namespace KafkaProducerApp
                             DedicatedSupportContact = "John Doe"
                         };
                         JObject premiumOrderJObject = JObject.FromObject(premiumOrder);
-                        await producer.ProduceAsync(topicName, new Message<Null, JObject> { Value = premiumOrderJObject });
-                        Console.WriteLine($"Delivered Premium Order: {premiumOrder.CustomerInfo.Name}");
+
+                        // Create Headers and add eventname
+                        Headers premiumHeaders = new Headers();
+                        premiumHeaders.Add("eventname", Encoding.UTF8.GetBytes("PremiumOrderCreated")); // Add eventname header
+
+                        await producer.ProduceAsync(topicName, new Message<Null, JObject> { Value = premiumOrderJObject, Headers = premiumHeaders });
+                        Console.WriteLine($"Delivered Premium Order: {premiumOrder.CustomerInfo.Name} with eventname: PremiumOrderCreated");
 
                         // Send another StandardOrderMessage
                         var standardOrder2 = new StandardOrderMessage
@@ -117,8 +128,13 @@ namespace KafkaProducerApp
                             StandardFeatures = "SMS alerts"
                         };
                         JObject standardOrder2JObject = JObject.FromObject(standardOrder2);
-                        await producer.ProduceAsync(topicName, new Message<Null, JObject> { Value = standardOrder2JObject });
-                        Console.WriteLine($"Delivered Standard Order: {standardOrder2.CustomerInfo.Name}");
+
+                        // Create Headers and add eventname
+                        Headers standardHeaders2 = new Headers();
+                        standardHeaders2.Add("eventname", Encoding.UTF8.GetBytes("StandardOrderCreated")); // Add eventname header
+
+                        await producer.ProduceAsync(topicName, new Message<Null, JObject> { Value = standardOrder2JObject, Headers = standardHeaders2 });
+                        Console.WriteLine($"Delivered Standard Order: {standardOrder2.CustomerInfo.Name} with eventname: StandardOrderCreated");
                     }
                 }
                 catch (ProduceException<Null, JObject> e)
