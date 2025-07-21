@@ -15,4 +15,7 @@
 	<ItemGroup>
 	  <ProjectReference Include="..\Kafka.Schemas.Shared\Kafka.Schemas.Shared.csproj" />
 	</ItemGroup>
+	<ItemGroup>
+	  <Folder Include="Schema\" />
+	</ItemGroup>
 </Project>

@@ -75,10 +75,34 @@ namespace KafkaProducerApp
                     int schemaId = await schemaRegistry.RegisterSchemaAsync(subject, schema);
                     Console.WriteLine($"JSON Schema registered successfully with ID: {schemaId}");
 
+                    // Added explicit registration of an empty root schema to work around the issue with Confluent Schema Registry
+                    // to work with AutoRegisterSchemas = false and  the latest version of the schema.
+                    rootSchemaJsonString = $@"
+                    {{
+                    }}";
+                    JObject rootSchemaJObject = JObject.Parse(rootSchemaJsonString);
+                    rootSchemaJObject.AddFirst(new JProperty("$schema", "http://json-schema.org/draft-04/schema#"));
+                    string finalRootSchemaJsonString = rootSchemaJObject.ToString(Formatting.None); // Use None for the final string to be registered
+                    schema = new Confluent.SchemaRegistry.Schema(finalRootSchemaJsonString, SchemaType.Json);
+                    schemaId = await schemaRegistry.RegisterSchemaAsync(subject, schema);
+                    Console.WriteLine($"JSON Schema registered successfully with ID: {schemaId}");
+
                     // --- End Explicit JSON Schema Registration ---
+                    var jsonSerializerConfig = new JsonSerializerConfig
+                    {
+                        AutoRegisterSchemas = false, // Set this back to true for auto-registration
+                        UseLatestVersion = true,
+                        LatestCompatibilityStrict = true,
+                    };
+                    //var jsonSerializerConfig = new JsonSerializerConfig
+                    //{
+                    //    AutoRegisterSchemas = true, // manually registered the schema above so set this to false
+                    //    UseLatestVersion = false, // Use the latest version of the schema, default is true
+                    //    LatestCompatibilityStrict = true,
+                    //};
 
                     using (var producer = new ProducerBuilder<Null, JObject>(producerConfig)
-                        .SetValueSerializer(new JsonSerializer<JObject>(schemaRegistry))
+                        .SetValueSerializer(new JsonSerializer<JObject>(schemaRegistry, jsonSerializerConfig))
                         .Build())
                     {
                         // Send a StandardOrderMessage
