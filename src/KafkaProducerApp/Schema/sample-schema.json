@@ -1,0 +1,371 @@
+{
+  "title": "OrderEvent",
+  "anyOf": [
+    {
+      "$ref": "#/definitions/StandardOrderMessage"
+    },
+    {
+      "$ref": "#/definitions/PremiumOrderMessage"
+    }
+  ],
+  "definitions": {
+    "Customer": {
+      "$schema": "http://json-schema.org/draft-04/schema#",
+      "title": "Customer",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "Id": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "Name": {
+          "type": "string"
+        }
+      }
+    },
+    "Product": {
+      "$schema": "http://json-schema.org/draft-04/schema#",
+      "title": "Product",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "Id": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "Name": {
+          "type": "string"
+        }
+      }
+    },
+    "StandardProduct": {
+      "$schema": "http://json-schema.org/draft-04/schema#",
+      "title": "StandardProduct",
+      "definitions": {
+        "Product": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "Id": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "Name": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "allOf": [
+        {
+          "$ref": "#/definitions/Product"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "StandardProductFeatures": {
+              "type": "string"
+            }
+          }
+        }
+      ]
+    },
+    "PremiumProduct": {
+      "$schema": "http://json-schema.org/draft-04/schema#",
+      "title": "PremiumProduct",
+      "definitions": {
+        "Product": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "Id": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "Name": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "allOf": [
+        {
+          "$ref": "#/definitions/Product"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "PremiumProductFeatures": {
+              "type": "string"
+            }
+          }
+        }
+      ]
+    },
+    "Contact": {
+      "$schema": "http://json-schema.org/draft-04/schema#",
+      "title": "Contact",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "Id": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "Name": {
+          "type": "string"
+        }
+      }
+    },
+    "OrderMessage": {
+      "$schema": "http://json-schema.org/draft-04/schema#",
+      "title": "OrderMessage",
+      "type": "object",
+      "x-abstract": true,
+      "additionalProperties": false,
+      "properties": {
+        "CustomerInfo": {
+          "$ref": "#/definitions/Customer"
+        },
+        "ContactInfo": {
+          "$ref": "#/definitions/Contact"
+        },
+        "Timestamp": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "definitions": {
+        "Customer": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "Id": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "Name": {
+              "type": "string"
+            }
+          }
+        },
+        "Contact": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "Id": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "Name": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "StandardOrderMessage": {
+      "$schema": "http://json-schema.org/draft-04/schema#",
+      "title": "StandardOrderMessage",
+      "definitions": {
+        "StandardProduct": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/Product"
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "StandardProductFeatures": {
+                  "type": "string"
+                }
+              }
+            }
+          ]
+        },
+        "Product": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "Id": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "Name": {
+              "type": "string"
+            }
+          }
+        },
+        "OrderMessage": {
+          "type": "object",
+          "x-abstract": true,
+          "additionalProperties": false,
+          "properties": {
+            "CustomerInfo": {
+              "$ref": "#/definitions/Customer"
+            },
+            "ContactInfo": {
+              "$ref": "#/definitions/Contact"
+            },
+            "Timestamp": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        },
+        "Customer": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "Id": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "Name": {
+              "type": "string"
+            }
+          }
+        },
+        "Contact": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "Id": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "Name": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "allOf": [
+        {
+          "$ref": "#/definitions/OrderMessage"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "OrderType": {
+              "type": "string"
+            },
+            "ProductInfo": {
+              "$ref": "#/definitions/StandardProduct"
+            },
+            "StandardFeatures": {
+              "type": "string"
+            }
+          }
+        }
+      ]
+    },
+    "PremiumOrderMessage": {
+      "$schema": "http://json-schema.org/draft-04/schema#",
+      "title": "PremiumOrderMessage",
+      "definitions": {
+        "PremiumProduct": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/Product"
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "PremiumProductFeatures": {
+                  "type": "string"
+                }
+              }
+            }
+          ]
+        },
+        "Product": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "Id": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "Name": {
+              "type": "string"
+            }
+          }
+        },
+        "OrderMessage": {
+          "type": "object",
+          "x-abstract": true,
+          "additionalProperties": false,
+          "properties": {
+            "CustomerInfo": {
+              "$ref": "#/definitions/Customer"
+            },
+            "ContactInfo": {
+              "$ref": "#/definitions/Contact"
+            },
+            "Timestamp": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        },
+        "Customer": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "Id": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "Name": {
+              "type": "string"
+            }
+          }
+        },
+        "Contact": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "Id": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "Name": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "allOf": [
+        {
+          "$ref": "#/definitions/OrderMessage"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "OrderType": {
+              "type": "string"
+            },
+            "ProductInfo": {
+              "$ref": "#/definitions/PremiumProduct"
+            },
+            "PremiumDiscountPercentage": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "DedicatedSupportContact": {
+              "type": "string"
+            }
+          }
+        }
+      ]
+    }
+  }
+}
