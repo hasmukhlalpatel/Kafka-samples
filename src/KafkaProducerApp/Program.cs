@@ -7,7 +7,6 @@ using Kafka.Schemas.Shared;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Text;
-using GenerateSchema = KafkaProducerApp.SchemaGenerator;
 
 namespace KafkaProducerApp
 {
@@ -32,16 +31,21 @@ namespace KafkaProducerApp
                 {
                     // --- Explicit JSON Schema Generation and Registration at Startup ---
 
+                    var oderMessageSchema = SchemaGenerator.GenerateSchema<OrderMessage>();
+                    oderMessageSchema.Properties["Order"].AnyOf.Add(SchemaGenerator.GenerateSchema<StandardOrder>());
+                    oderMessageSchema.Properties["Order"].AnyOf.Add(SchemaGenerator.GenerateSchema<PremiumOrder>());
+
+
                     // Generate schemas for all relevant types
                     // Using the new static GenerateSchema<T>() helper method
-                    var customerSchemaString = GenerateSchema.GenerateSchema<Customer>();
-                    var productSchemaString = GenerateSchema.GenerateSchema<Product>();
-                    var standardProductSchemaString = GenerateSchema.GenerateSchema<StandardProduct>();
-                    var premiumProductSchemaString = GenerateSchema.GenerateSchema<PremiumProduct>();
-                    var contactSchemaString = GenerateSchema.GenerateSchema<Contact>();
-                    var orderMessageBaseSchemaString = GenerateSchema.GenerateSchema<OrderMessage>();
-                    var standardOrderSchemaString =  GenerateSchema.GenerateSchema<StandardOrderMessage>();
-                    var premiumOrderSchemaString = GenerateSchema.GenerateSchema<PremiumOrderMessage>();
+                    var customerSchemaString = SchemaGenerator.GenerateSchemaJson<Customer>();
+                    var productSchemaString = SchemaGenerator.GenerateSchemaJson<Product>();
+                    var standardProductSchemaString = SchemaGenerator.GenerateSchemaJson<StandardProduct>();
+                    var premiumProductSchemaString = SchemaGenerator.GenerateSchemaJson<PremiumProduct>();
+                    var contactSchemaString = SchemaGenerator.GenerateSchemaJson<Contact>();
+                    var orderMessageBaseSchemaString = SchemaGenerator.GenerateSchemaJson<OrderBase>();
+                    var standardOrderSchemaString =  SchemaGenerator.GenerateSchemaJson<StandardOrder>();
+                    var premiumOrderSchemaString = SchemaGenerator.GenerateSchemaJson<PremiumOrder>();
 
 
                     // Manually construct the root JSON Schema with 'anyOf'
@@ -106,7 +110,7 @@ namespace KafkaProducerApp
                         .Build())
                     {
                         // Send a StandardOrderMessage
-                        var standardOrder = new StandardOrderMessage
+                        var standardOrder = new StandardOrder
                         {
                             CustomerInfo = new Customer { Id = 1, Name = "Alice Smith" },
                             ProductInfo = new StandardProduct { Id = 101, Name = "Basic Service", StandardProductFeatures = "Feature A" },
@@ -124,7 +128,7 @@ namespace KafkaProducerApp
                         Console.WriteLine($"Delivered Standard Order: {standardOrder.CustomerInfo.Name} with eventname: StandardOrderCreated");
 
                         // Send a PremiumOrderMessage
-                        var premiumOrder = new PremiumOrderMessage
+                        var premiumOrder = new PremiumOrder
                         {
                             CustomerInfo = new Customer { Id = 2, Name = "Bob Johnson" },
                             ProductInfo = new PremiumProduct { Id = 102, Name = "Premium Package", PremiumProductFeatures = "Feature X" },
@@ -143,7 +147,7 @@ namespace KafkaProducerApp
                         Console.WriteLine($"Delivered Premium Order: {premiumOrder.CustomerInfo.Name} with eventname: PremiumOrderCreated");
 
                         // Send another StandardOrderMessage
-                        var standardOrder2 = new StandardOrderMessage
+                        var standardOrder2 = new StandardOrder
                         {
                             CustomerInfo = new Customer { Id = 3, Name = "Charlie Brown" },
                             ProductInfo = new StandardProduct { Id = 103, Name = "Basic Service Plus", StandardProductFeatures = "Feature B" },

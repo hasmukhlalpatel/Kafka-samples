@@ -74,14 +74,14 @@ namespace KafkaConsumerApp
                             // Now, use the OrderType property to determine the specific message type
                             if (orderType == "StandardOrder")
                             {
-                                var standardOrder = receivedJObject.ToObject<StandardOrderMessage>();
+                                var standardOrder = receivedJObject.ToObject<StandardOrder>();
                                 Console.WriteLine($"  Type: Standard Order");
                                 Console.WriteLine($"  Customer: {standardOrder.CustomerInfo.Name}, Product: {standardOrder.ProductInfo.Name} (Features: {standardOrder.ProductInfo.StandardProductFeatures})");
                                 Console.WriteLine($"  Standard Features: {standardOrder.StandardFeatures}");
                             }
                             else if (orderType == "PremiumOrder")
                             {
-                                var premiumOrder = receivedJObject.ToObject<PremiumOrderMessage>();
+                                var premiumOrder = receivedJObject.ToObject<PremiumOrder>();
                                 Console.WriteLine($"  Type: Premium Order");
                                 Console.WriteLine($"  Customer: {premiumOrder.CustomerInfo.Name}, Product: {premiumOrder.ProductInfo.Name} (Features: {premiumOrder.ProductInfo.PremiumProductFeatures})");
                                 Console.WriteLine($"  Premium Discount: {premiumOrder.PremiumDiscountPercentage}%, Support: {premiumOrder.DedicatedSupportContact}");

@@ -7,7 +7,7 @@ namespace KafkaProducerApp
 {
     public class SchemaGenerator
     {
-        public static string GenerateSchema<T>() => NewtonsoftJsonSchemaGenerator.FromType<T>(new NewtonsoftJsonSchemaGeneratorSettings
+        public static NJsonSchema.JsonSchema GenerateSchema<T>() => NewtonsoftJsonSchemaGenerator.FromType<T>(new NewtonsoftJsonSchemaGeneratorSettings
         {
             SerializerSettings = new Newtonsoft.Json.JsonSerializerSettings
             {
@@ -18,8 +18,24 @@ namespace KafkaProducerApp
                 Formatting = Newtonsoft.Json.Formatting.None,
 
             }
-        }).ToJson();
-        public static string GenerateSchema_old<T>() => NewtonsoftJsonSchemaGenerator.FromType<T>(new NewtonsoftJsonSchemaGeneratorSettings
+        });
+
+        public static string GenerateSchemaJson<T>() => GenerateSchema<T>().ToJson();
+        public static NJsonSchema.JsonSchema GenerateSchema(Type type) => NewtonsoftJsonSchemaGenerator.FromType(type, new NewtonsoftJsonSchemaGeneratorSettings
+        {
+            SerializerSettings = new Newtonsoft.Json.JsonSerializerSettings
+            {
+                //TypeNameHandling = Newtonsoft.Json.TypeNameHandling.Auto,
+                //Formatting = Newtonsoft.Json.Formatting.Indented,
+                //Converters = [new Samples.Serialization.Library.PolymorphicJsonConverter<T>()]
+
+                Formatting = Newtonsoft.Json.Formatting.None,
+
+            }
+        });
+        public static string GenerateSchemaJson(Type type) => GenerateSchema(type).ToJson();
+
+        public static NJsonSchema.JsonSchema GenerateSchemaWithTypeName<T>() => NewtonsoftJsonSchemaGenerator.FromType<T>(new NewtonsoftJsonSchemaGeneratorSettings
         {
             SerializerSettings = new Newtonsoft.Json.JsonSerializerSettings
             {
@@ -28,7 +44,21 @@ namespace KafkaProducerApp
                 //Converters = [new Samples.Serialization.Library.PolymorphicJsonConverter<T>()]
 
             }
-        }).ToJson();
+        });
+        public static string GenerateSchemaJsonWithTypeName<T>() => GenerateSchemaWithTypeName<T>().ToJson();
+
+        public static NJsonSchema.JsonSchema GenerateSchemaWithTypeName(Type type) => NewtonsoftJsonSchemaGenerator.FromType(type, new NewtonsoftJsonSchemaGeneratorSettings
+        {
+            SerializerSettings = new Newtonsoft.Json.JsonSerializerSettings
+            {
+                TypeNameHandling = Newtonsoft.Json.TypeNameHandling.Auto,
+                Formatting = Newtonsoft.Json.Formatting.Indented,
+                //Converters = [new Samples.Serialization.Library.PolymorphicJsonConverter<T>()]
+
+            }
+        });
+
+        public static string GenerateSchemaJsonWithTypeName(Type type) => GenerateSchemaWithTypeName(type).ToJson();
 
         //public static string GenerateSchema2<T>()
         //{

@@ -1,4 +1,7 @@
-﻿namespace com.example.schemas
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+
+namespace com.example.schemas
 {
     public class Customer
     {
@@ -18,6 +21,7 @@
     public class PremiumProduct : Product
     {
         public string PremiumProductFeatures { get; set; }
+        public string PremiumProductFeatures1 { get; set; }
     }
 
     public class Contact
@@ -27,7 +31,7 @@
     }
 
     // Base OrderMessage class
-    public abstract class OrderMessage
+    public abstract class OrderBase
     {
         public abstract string OrderType { get; }
         public Customer CustomerInfo { get; set; }
@@ -36,18 +40,24 @@
     }
 
     // Specific message types for the union, inheriting from OrderMessage
-    public class StandardOrderMessage : OrderMessage
+    public class StandardOrder : OrderBase
     {
         public override string OrderType => "StandardOrder";
         public StandardProduct ProductInfo { get; set; }
         public string StandardFeatures { get; set; }
     }
 
-    public class PremiumOrderMessage : OrderMessage
+    public class PremiumOrder : OrderBase
     {
         public override string OrderType => "PremiumOrder";
         public PremiumProduct ProductInfo { get; set; }
         public int PremiumDiscountPercentage { get; set; }
         public string DedicatedSupportContact { get; set; }
+    }
+
+    public class OrderMessage
+    {
+        [JsonProperty("Order")]
+        public JObject Order { get; set; }  // This allows dynamic typing (useful for anyOf)
     }
 }
