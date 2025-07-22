@@ -39,7 +39,7 @@ namespace KafkaProducerApp
                     var standardProductSchemaString = GenerateSchema.GenerateSchema<StandardProduct>();
                     var premiumProductSchemaString = GenerateSchema.GenerateSchema<PremiumProduct>();
                     var contactSchemaString = GenerateSchema.GenerateSchema<Contact>();
-                    var orderMessageBaseSchemaString = GenerateSchema.GenerateSchema<OrderMessage>();
+                    //var orderMessageBaseSchemaString = GenerateSchema.GenerateSchema<OrderMessage>();
                     var standardOrderSchemaString =  GenerateSchema.GenerateSchema<StandardOrderMessage>();
                     var premiumOrderSchemaString = GenerateSchema.GenerateSchema<PremiumOrderMessage>();
 
@@ -60,7 +60,6 @@ namespace KafkaProducerApp
                             ""StandardProduct"": {standardProductSchemaString},
                             ""PremiumProduct"": {premiumProductSchemaString},
                             ""Contact"": {contactSchemaString},
-                            ""OrderMessage"": {orderMessageBaseSchemaString},
                             ""StandardOrderMessage"": {standardOrderSchemaString},
                             ""PremiumOrderMessage"": {premiumOrderSchemaString}
                         }}

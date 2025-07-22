@@ -36,16 +36,22 @@
     }
 
     // Specific message types for the union, inheriting from OrderMessage
-    public class StandardOrderMessage : OrderMessage
+    public class StandardOrderMessage 
     {
-        public override string OrderType => "StandardOrder";
+        public Customer CustomerInfo { get; set; }
+        public Contact ContactInfo { get; set; }
+        public DateTimeOffset Timestamp { get; set; }
+        public string OrderType => "StandardOrder";
         public StandardProduct ProductInfo { get; set; }
         public string StandardFeatures { get; set; }
     }
 
-    public class PremiumOrderMessage : OrderMessage
+    public class PremiumOrderMessage 
     {
-        public override string OrderType => "PremiumOrder";
+        public Customer CustomerInfo { get; set; }
+        public Contact ContactInfo { get; set; }
+        public DateTimeOffset Timestamp { get; set; }
+        public string OrderType => "PremiumOrder";
         public PremiumProduct ProductInfo { get; set; }
         public int PremiumDiscountPercentage { get; set; }
         public string DedicatedSupportContact { get; set; }
