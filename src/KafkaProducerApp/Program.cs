@@ -30,11 +30,17 @@ namespace KafkaProducerApp
                 try
                 {
                     // --- Explicit JSON Schema Generation and Registration at Startup ---
-
+                    var tmpTopicName = "tmp";
                     var oderMessageSchema = SchemaGenerator.GenerateSchema<OrderMessage>();
                     oderMessageSchema.Properties["Order"].AnyOf.Add(SchemaGenerator.GenerateSchema<StandardOrder>());
                     oderMessageSchema.Properties["Order"].AnyOf.Add(SchemaGenerator.GenerateSchema<PremiumOrder>());
+                    var oderMessageSchemaJsonString = oderMessageSchema.ToJson();
+                    Console.WriteLine($"Generated JSON Schema:\n{JToken.Parse(oderMessageSchemaJsonString).ToString(Formatting.Indented)}");
 
+                    var oderMessageSchema1 = new Confluent.SchemaRegistry.Schema(oderMessageSchemaJsonString, SchemaType.Json);
+
+                    var tmpSchemaId = await schemaRegistry.RegisterSchemaAsync("test-value", oderMessageSchema1);
+                    Console.WriteLine($"JSON Schema registered successfully with ID: {tmpSchemaId}");
 
                     // Generate schemas for all relevant types
                     // Using the new static GenerateSchema<T>() helper method
