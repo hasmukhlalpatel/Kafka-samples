@@ -34,14 +34,14 @@ namespace KafkaProducerApp
 
                     // Generate schemas for all relevant types
                     // Using the new static GenerateSchema<T>() helper method
-                    var customerSchemaString = GenerateSchema.GenerateSchema<Customer>();
-                    var productSchemaString = GenerateSchema.GenerateSchema<Product>();
-                    var standardProductSchemaString = GenerateSchema.GenerateSchema<StandardProduct>();
-                    var premiumProductSchemaString = GenerateSchema.GenerateSchema<PremiumProduct>();
-                    var contactSchemaString = GenerateSchema.GenerateSchema<Contact>();
-                    var orderMessageBaseSchemaString = GenerateSchema.GenerateSchema<OrderMessage>();
-                    var standardOrderSchemaString =  GenerateSchema.GenerateSchema<StandardOrderMessage>();
-                    var premiumOrderSchemaString = GenerateSchema.GenerateSchema<PremiumOrderMessage>();
+                    var customerSchemaString = GenerateSchema.GenerateSchemaJson<Customer>();
+                    var productSchemaString = GenerateSchema.GenerateSchemaJson<Product>();
+                    var standardProductSchemaString = GenerateSchema.GenerateSchemaJson<StandardProduct>();
+                    var premiumProductSchemaString = GenerateSchema.GenerateSchemaJson<PremiumProduct>();
+                    var contactSchemaString = GenerateSchema.GenerateSchemaJson<Contact>();
+                    var orderMessageBaseSchemaString = GenerateSchema.GenerateSchemaJson<OrderMessage>();
+                    var standardOrderSchemaString =  GenerateSchema.GenerateSchemaJson<StandardOrderMessage>();
+                    var premiumOrderSchemaString = GenerateSchema.GenerateSchemaJson<PremiumOrderMessage>();
 
 
                     // Manually construct the root JSON Schema with 'anyOf'
