@@ -23,6 +23,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KafkaProducer.WebApp", "src
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{905187CC-0646-49B1-9956-EBC4CFFB02A5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KafkaProducer.WebApp.Tests", "tests\KafkaProducer.WebApp.Tests\KafkaProducer.WebApp.Tests.csproj", "{2F16204F-3ECB-4AB4-852E-48840D69E91B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -45,6 +47,10 @@ Global
 		{FA1526A9-179F-4AB7-A6D8-4163707FC370}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FA1526A9-179F-4AB7-A6D8-4163707FC370}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FA1526A9-179F-4AB7-A6D8-4163707FC370}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2F16204F-3ECB-4AB4-852E-48840D69E91B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2F16204F-3ECB-4AB4-852E-48840D69E91B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2F16204F-3ECB-4AB4-852E-48840D69E91B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2F16204F-3ECB-4AB4-852E-48840D69E91B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -54,6 +60,7 @@ Global
 		{BD698E88-037B-286E-CD05-8D9E86898864} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{1D068A92-4336-409D-9535-74034CCF8D74} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{FA1526A9-179F-4AB7-A6D8-4163707FC370} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{2F16204F-3ECB-4AB4-852E-48840D69E91B} = {905187CC-0646-49B1-9956-EBC4CFFB02A5}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {DB39DEA7-2A42-48CB-AF65-1797BC25C7C2}
