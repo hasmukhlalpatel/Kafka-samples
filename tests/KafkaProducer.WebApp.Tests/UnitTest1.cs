@@ -1,6 +1,6 @@
 ﻿namespace KafkaProducer.WebApp.Tests
 {
-    public class UnitTest1
+    public class SchemaUnitTest
     {
         [Fact]
         public void Test1()
