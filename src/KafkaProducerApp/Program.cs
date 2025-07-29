@@ -7,7 +7,7 @@ using Kafka.Schemas.Shared;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Text;
-using GenerateSchema = KafkaProducerApp.SchemaGenerator;
+using GenerateSchema = Kafka.Schemas.Shared.SchemaGenerator;
 
 namespace KafkaProducerApp
 {

@@ -1,9 +1,8 @@
-﻿// KafkaProducerApp/SchemaGenerator.cs
-using NJsonSchema.NewtonsoftJson.Generation;
+﻿using NJsonSchema.NewtonsoftJson.Generation;
 
-namespace KafkaProducerApp
+namespace Kafka.Schemas.Shared
 {
-    public class SchemaGenerator_donot_use
+    public class SchemaGenerator
     {
         public static NJsonSchema.JsonSchema GenerateSchema<T>() => NewtonsoftJsonSchemaGenerator.FromType<T>(new NewtonsoftJsonSchemaGeneratorSettings
         {

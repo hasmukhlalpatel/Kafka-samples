@@ -5,8 +5,8 @@ using System.Text;
 
 namespace Kafka.Schemas.Shared
 {
-    public class MessageProducerBuilder<TKey, TValue> :IDisposable
-        where TKey : class
+    public class MessageProducerBuilder<TKey, TValue> : IDisposable, 
+        IMessageProducerBuilder<TKey, TValue>
         where TValue : class
     {
         private readonly IProducer<TKey, TValue> _producer;
@@ -27,17 +27,18 @@ namespace Kafka.Schemas.Shared
                 LatestCompatibilityStrict = true,
             };
         }
+
         public MessageProducerBuilder(ProducerConfig producerConfig,
             SchemaRegistryConfig config, JsonSerializerConfig jsonSerializerConfig)
         {
             var schemaRegistry = new CachedSchemaRegistryClient(config);
-            _producer = new ProducerBuilder<TKey,TValue>(producerConfig)
+            _producer = new ProducerBuilder<TKey, TValue>(producerConfig)
                         .SetValueSerializer(new JsonSerializer<TValue>(schemaRegistry, jsonSerializerConfig))
                         .Build();
         }
 
-        public async Task ProduceAsync(string topic, TKey key, TValue value, IReadOnlyDictionary<string,string> headers,
-            CancellationToken cancellationToken)
+        public async Task ProduceAsync(string topic, TKey key, TValue value, IReadOnlyDictionary<string, string> headers,
+            CancellationToken cancellationToken = default(CancellationToken))
         {
             try
             {
