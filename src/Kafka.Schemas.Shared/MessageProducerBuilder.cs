@@ -9,7 +9,7 @@ namespace Kafka.Schemas.Shared
         IMessageProducerBuilder<TKey, TValue>
         where TValue : class
     {
-        private readonly IProducer<TKey, TValue> _producer;
+        private readonly IProducer<TKey, TValue> _producer = null;
 
         public MessageProducerBuilder()
         {
@@ -26,15 +26,26 @@ namespace Kafka.Schemas.Shared
                 UseLatestVersion = true,
                 LatestCompatibilityStrict = true,
             };
+            _producer = InitializeProducer(producerConfig, config, jsonSerializerConfig);
         }
 
         public MessageProducerBuilder(ProducerConfig producerConfig,
             SchemaRegistryConfig config, JsonSerializerConfig jsonSerializerConfig)
         {
-            var schemaRegistry = new CachedSchemaRegistryClient(config);
-            _producer = new ProducerBuilder<TKey, TValue>(producerConfig)
-                        .SetValueSerializer(new JsonSerializer<TValue>(schemaRegistry, jsonSerializerConfig))
-                        .Build();
+            _producer = InitializeProducer(producerConfig, config, jsonSerializerConfig);
+        }
+
+        private IProducer<TKey, TValue> InitializeProducer(ProducerConfig producerConfig,
+            SchemaRegistryConfig config, JsonSerializerConfig jsonSerializerConfig)
+        {
+            if (_producer == null)
+            {
+                var schemaRegistry = new CachedSchemaRegistryClient(config);
+                return new ProducerBuilder<TKey, TValue>(producerConfig)
+                            .SetValueSerializer(new JsonSerializer<TValue>(schemaRegistry, jsonSerializerConfig))
+                            .Build();
+            }
+            return _producer;
         }
 
         public async Task ProduceAsync(string topic, TKey key, TValue value, IReadOnlyDictionary<string, string> headers,

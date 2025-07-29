@@ -33,17 +33,8 @@ namespace Kafka.Schemas.Shared
         }
         public async Task<int> RegisterSchemaAsync(string topicName, string schemaJson)
         {
-            string subject = $"{topicName}-value";
-
-            try
-            {
-                return await _schemaRegistryClient.RegisterSchemaAsync(subject, schemaJson);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error registering schema: {ex.Message}");
-                throw;
-            }
+            var schema = new Confluent.SchemaRegistry.Schema(schemaJson, SchemaType.Json);
+            return await RegisterSchemaAsync(topicName, schema);
         }
 
         public void Dispose()
