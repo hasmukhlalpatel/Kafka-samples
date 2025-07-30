@@ -47,7 +47,23 @@ namespace Kafka.Schemas.Shared
             }
             return _producer;
         }
-
+        public async Task ProduceAsync(string topic, Message<TKey, TValue> message,
+            CancellationToken cancellationToken = default(CancellationToken))
+        {
+            try
+            {
+                var deliveryResult = await _producer.ProduceAsync(topic, message, cancellationToken);
+                Console.WriteLine($"Message delivered to {deliveryResult.TopicPartitionOffset}");
+            }
+            catch (ProduceException<TKey, TValue> e)
+            {
+                Console.WriteLine($"Delivery failed: {e.Error.Reason}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"An error occurred while producing the message: {ex.Message}");
+            }
+        }
         public async Task ProduceAsync(string topic, TKey key, TValue value, IReadOnlyDictionary<string, string> headers,
             CancellationToken cancellationToken = default(CancellationToken))
         {

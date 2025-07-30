@@ -14,10 +14,12 @@ namespace Kafka.Schemas.Shared
             };
             _schemaRegistryClient = new CachedSchemaRegistryClient(config);
         }
+        
         public SchemaRegistryService(SchemaRegistryConfig config)
         {
             _schemaRegistryClient = new CachedSchemaRegistryClient(config);
         }
+
         public async Task<int> RegisterSchemaAsync(string topicName, Schema schema)
         {
             string subject = $"{topicName}-value";
@@ -31,6 +33,7 @@ namespace Kafka.Schemas.Shared
                 throw;
             }
         }
+
         public async Task<int> RegisterSchemaAsync(string topicName, string schemaJson)
         {
             var schema = new Confluent.SchemaRegistry.Schema(schemaJson, SchemaType.Json);

@@ -1,4 +1,5 @@
-﻿using Kafka.Schemas.Shared;
+﻿using Confluent.Kafka;
+using Kafka.Schemas.Shared;
 namespace KafkaProducer.WebApp.Tests
 {
     public class SchemaUnitTest
@@ -7,13 +8,13 @@ namespace KafkaProducer.WebApp.Tests
         public async Task SendMessageTest()
         {
             // Arrange
-            var topicName = "test-topic";
+            var topicName = "test-topic-2";
             using (var schemaRegistry = new SchemaRegistryService())
             {
                 var id = await schemaRegistry.RegisterSchemaAsync(topicName, SchemaGenerator.GenerateSchemaJson<TestMessage>());
             }
 
-            using (var producer = new MessageProducerBuilder<Guid, TestMessage>())
+            using (var producer = new MessageProducerBuilder<Confluent.Kafka.Null, TestMessage>())
             {
                 var customer = new TestCustomer
                 {
@@ -22,7 +23,15 @@ namespace KafkaProducer.WebApp.Tests
                     Age = 30,
                     Email = "test@test.com"
                 };
-                await producer.ProduceAsync(topicName, customer.Id, new TestMessage { Customer =customer}, null, default(CancellationToken));
+                var customerEvent = new CustomerCreateEvent { Customer = customer };
+                var customerMessage = new TestMessage { CustomerEventData = customerEvent };
+                var message = new Message<Confluent.Kafka.Null, TestMessage>
+                {
+                    Value = customerMessage
+                };
+                // Act
+                await producer.ProduceAsync(topicName, message);
+                //await producer.ProduceAsync(topicName, customer.Id, new TestMessage { Customer =customer}, null, default(CancellationToken));
                 var order = new TestOrder
                 {
                     Id = Guid.NewGuid(),
@@ -31,15 +40,33 @@ namespace KafkaProducer.WebApp.Tests
                     Price = 19.99m,
                     OrderDate = DateTime.UtcNow
                 };
-                await producer.ProduceAsync(topicName, customer.Id, new TestMessage { Order = order }, null, default(CancellationToken));
+                var orderEvent = new OrderCreateEvent { Customer = customer, Order = order };
+                var orderMessage = new TestMessage { OrderEventData = orderEvent };
+                message = new Message<Confluent.Kafka.Null, TestMessage>
+                {
+                    Value = orderMessage
+                };
+                await producer.ProduceAsync(topicName, message);
+                //await producer.ProduceAsync(topicName,  new TestMessage { Order = order }, null, default(CancellationToken));
 
             }
         }
 
         public class TestMessage
         {
-            public TestCustomer? Customer { get; set; }
-            public TestOrder? Order { get; set; }
+            public CustomerCreateEvent? CustomerEventData { get; set; }
+            public OrderCreateEvent? OrderEventData { get; set; }
+        }
+
+        public class CustomerCreateEvent
+        {
+            public TestCustomer Customer { get; set; }
+        }
+
+        public class OrderCreateEvent
+        {
+            public TestCustomer Customer { get; set; }
+            public TestOrder Order { get; set; }
         }
 
         public class TestCustomer
