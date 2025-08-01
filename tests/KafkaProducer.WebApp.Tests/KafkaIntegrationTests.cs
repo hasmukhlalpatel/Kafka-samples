@@ -42,6 +42,12 @@ namespace KafkaProducer.WebApp.Tests
             // 3. Start Schema Registry Container
             _schemaRegistryContainer = StartRegistryContainer();
 
+            await _zookeeper.StartAsync();
+            await _kafkaContainer.StartAsync();
+            Console.WriteLine("⏳ Waiting for Kafka to be fully ready...");
+            await Task.Delay(TimeSpan.FromSeconds(10)); // Simple wait, or replace with real TCP check
+            await _schemaRegistryContainer.StartAsync();
+
             await Task.WhenAll(
                 _zookeeper.StartAsync(),
                 _kafkaContainer.StartAsync(),
@@ -84,6 +90,7 @@ namespace KafkaProducer.WebApp.Tests
             .WithEnvironment("ZOOKEEPER_CLIENT_PORT", "2181")
             .WithEnvironment("ZOOKEEPER_TICK_TIME", "2000")
             .WithNetwork(_network) // Use the same network as Kafka
+            .WithNetworkAliases("zookeeper")
             .Build();
         }
         private IContainer BuildKafkaBroker()
@@ -94,12 +101,14 @@ namespace KafkaProducer.WebApp.Tests
             .WithPortBinding(KafkaPort, true)
             .WithEnvironment("KAFKA_BROKER_ID", "1")
             .WithEnvironment("KAFKA_ZOOKEEPER_CONNECT", "zookeeper:2181")
-            .WithEnvironment("KAFKA_LISTENERS", "PLAINTEXT://0.0.0.0:9092")
-            .WithEnvironment("KAFKA_ADVERTISED_LISTENERS", "PLAINTEXT://localhost:9092")
-            .WithEnvironment("KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR", "1")
+            .WithEnvironment("KAFKA_LISTENER_SECURITY_PROTOCOL_MAP", "PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT")
+            .WithEnvironment("KAFKA_ADVERTISED_LISTENERS", "PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://kafka:29092")
+            .WithEnvironment("KAFKA_LISTENERS", "PLAINTEXT://0.0.0.0:9092,PLAINTEXT_INTERNAL://0.0.0.0:29092")
+            .WithEnvironment("KAFKA_INTER_BROKER_LISTENER_NAME", "PLAINTEXT_INTERNAL")
             .DependsOn(_zookeeper)
             .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(KafkaPort))
             .WithNetwork(_network)// Use the same network as Zookeeper
+            .WithNetworkAliases("kafka") // Set a network alias for Kafka
             .Build();
         }
 
@@ -110,12 +119,13 @@ namespace KafkaProducer.WebApp.Tests
             .WithImage(SchemaRegistryImage)
             .WithPortBinding(SchemaRegistryPort, true)
             .WithEnvironment("SCHEMA_REGISTRY_HOST_NAME", "schema-registry")
+            .WithEnvironment("SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS", "PLAINTEXT://kafka:29092")
             .WithEnvironment("SCHEMA_REGISTRY_LISTENERS", "http://0.0.0.0:8081")
-            .WithEnvironment("SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS", "PLAINTEXT://localhost:9092")
             .DependsOn(_kafkaContainer)
             .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(SchemaRegistryPort))
-                .WithNetwork(_network) // Use the same network as Kafka
-                .Build();
+            .WithNetwork(_network) // Use the same network as Kafka
+            .WithNetworkAliases("schema-registry") // Set a network alias for Schema Registry
+            .Build();
         }
 
         public async Task DisposeAsync()
