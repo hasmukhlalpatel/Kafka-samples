@@ -11,10 +11,19 @@ namespace KafkaProducer.WebApp.Tests
     {
         private WebApplicationFactory<KafkaProducerWebApp.Program> _factory;
         private IContainer _kafkaContainer;
+        private IContainer _zookeeper;
         private IContainer _schemaRegistryContainer;
+
+        private const int KafkaPort = 9092;
+        private const int SchemaRegistryPort = 8081;
+
+        private string BootstrapServers => "localhost:9092";
+        private string SchemaRegistryUrl => "http://localhost:8081";
+
         DotNet.Testcontainers.Networks.INetwork _network;
 
         // Testcontainers configurations
+        private const string zookeeperImage = "confluentinc/cp-zookeeper:7.6.0"; // Use a specific version
         private const string KafkaImage = "confluentinc/cp-kafka:7.6.0"; // Use a specific version
         private const string SchemaRegistryImage = "confluentinc/cp-schema-registry:7.6.0"; // Use a specific version
 
@@ -23,38 +32,26 @@ namespace KafkaProducer.WebApp.Tests
             _network = new NetworkBuilder()
                 .WithName("kafka-network")
                 .Build();
-            // 1. Start Kafka Container
-            _kafkaContainer = new ContainerBuilder()
-                .WithImage(KafkaImage)
-                .WithPortBinding(9092, true) // Bind Kafka's internal port to a random host port
-                .WithPortBinding(9093, true) // For external listeners (often used with Schema Registry)
-                .WithEnvironment("KAFKA_BROKER_ID", "1")
-                .WithEnvironment("KAFKA_ZOOKEEPER_CONNECT", "localhost:2181") // Zookeeper is often bundled or assumed for Kafka
-                .WithEnvironment("KAFKA_LISTENERS", "PLAINTEXT://0.0.0.0:9092,PLAINTEXT_HOST://0.0.0.0:9093")
-                .WithEnvironment("KAFKA_ADVERTISED_LISTENERS", $"PLAINTEXT://localhost:{{_kafkaContainer.Get  MappedPort(9092)}},PLAINTEXT_HOST://localhost:{{_kafkaContainer.GetMappedPort(9093)}}")
-                .WithEnvironment("KAFKA_LISTENER_SECURITY_PROTOCOL_MAP", "PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT")
-                .WithEnvironment("KAFKA_INTER_BROKER_LISTENER_NAME", "PLAINTEXT")
-                .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(9092))
-                .WithNetwork(_network) // Use a custom network for Kafka
-                .Build();
 
-            await _kafkaContainer.StartAsync();
+            // 1. Start Zookeeper Container
+            _zookeeper = BuildZookeeper();
+
+            // 2. Start Kafka Container
+            _kafkaContainer = BuildKafkaBroker();
+
+            // 3. Start Schema Registry Container
+            _schemaRegistryContainer = StartRegistryContainer();
+
+            await Task.WhenAll(
+                _zookeeper.StartAsync(),
+                _kafkaContainer.StartAsync(),
+                _schemaRegistryContainer.StartAsync()
+            );
 
             // Get the dynamically assigned Kafka port
             var kafkaBootstrapServers = $"localhost:{_kafkaContainer.GetMappedPublicPort(9092)}";
+
             Console.WriteLine($"Kafka running on: {kafkaBootstrapServers}");
-
-            // 2. Start Schema Registry Container
-            _schemaRegistryContainer = new ContainerBuilder()
-                .WithImage(SchemaRegistryImage)
-                .WithPortBinding(8081, true) // Bind Schema Registry's internal port to a random host port
-                .WithEnvironment("SCHEMA_REGISTRY_HOST_NAME", "localhost")
-                .WithEnvironment("SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS", kafkaBootstrapServers) // Link to Kafka
-                .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(8081))
-                .WithNetwork(_network) // Use the same network as Kafka
-                .Build();
-
-            await _schemaRegistryContainer.StartAsync();
 
             // Get the dynamically assigned Schema Registry port
             var schemaRegistryUrl = $"http://localhost:{_schemaRegistryContainer.GetMappedPublicPort(8081)}";
@@ -78,19 +75,56 @@ namespace KafkaProducer.WebApp.Tests
                     builder.UseEnvironment("Development");
                 });
         }
+        private IContainer BuildZookeeper()
+        {
+            return new ContainerBuilder()
+            .WithName("zookeeper")
+            .WithImage(zookeeperImage)
+            .WithPortBinding(2181, true)
+            .WithEnvironment("ZOOKEEPER_CLIENT_PORT", "2181")
+            .WithEnvironment("ZOOKEEPER_TICK_TIME", "2000")
+            .WithNetwork(_network) // Use the same network as Kafka
+            .Build();
+        }
+        private IContainer BuildKafkaBroker()
+        {
+            return new ContainerBuilder()
+            .WithName("kafka-test")
+            .WithImage(KafkaImage)
+            .WithPortBinding(KafkaPort, true)
+            .WithEnvironment("KAFKA_BROKER_ID", "1")
+            .WithEnvironment("KAFKA_ZOOKEEPER_CONNECT", "zookeeper:2181")
+            .WithEnvironment("KAFKA_LISTENERS", "PLAINTEXT://0.0.0.0:9092")
+            .WithEnvironment("KAFKA_ADVERTISED_LISTENERS", "PLAINTEXT://localhost:9092")
+            .WithEnvironment("KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR", "1")
+            .DependsOn(_zookeeper)
+            .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(KafkaPort))
+            .WithNetwork(_network)// Use the same network as Zookeeper
+            .Build();
+        }
+
+        private IContainer StartRegistryContainer()
+        {
+            return new ContainerBuilder()
+            .WithName("schema-registry-test")
+            .WithImage(SchemaRegistryImage)
+            .WithPortBinding(SchemaRegistryPort, true)
+            .WithEnvironment("SCHEMA_REGISTRY_HOST_NAME", "schema-registry")
+            .WithEnvironment("SCHEMA_REGISTRY_LISTENERS", "http://0.0.0.0:8081")
+            .WithEnvironment("SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS", "PLAINTEXT://localhost:9092")
+            .DependsOn(_kafkaContainer)
+            .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(SchemaRegistryPort))
+                .WithNetwork(_network) // Use the same network as Kafka
+                .Build();
+        }
 
         public async Task DisposeAsync()
         {
             // Clean up containers and factory
             await _factory.DisposeAsync();
-            if (_schemaRegistryContainer != null)
-            {
-                await _schemaRegistryContainer.DisposeAsync();
-            }
-            if (_kafkaContainer != null)
-            {
-                await _kafkaContainer.DisposeAsync();
-            }
+            await _schemaRegistryContainer.DisposeAsync();
+            await _kafkaContainer.DisposeAsync();
+            await _network.DisposeAsync();
         }
 
         [Fact]
