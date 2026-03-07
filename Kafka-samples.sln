@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.0.31903.59
+# Visual Studio Version 18
+VisualStudioVersion = 18.3.11520.95 d18.3
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
 EndProject
@@ -24,6 +24,8 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{905187CC-0646-49B1-9956-EBC4CFFB02A5}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KafkaProducer.WebApp.Tests", "tests\KafkaProducer.WebApp.Tests\KafkaProducer.WebApp.Tests.csproj", "{2F16204F-3ECB-4AB4-852E-48840D69E91B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AspireApp.Host", "AspireApp.Host\AspireApp.Host.csproj", "{4B25E20F-7DCA-46A3-ABE2-F71DFD69B9E6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -51,6 +53,10 @@ Global
 		{2F16204F-3ECB-4AB4-852E-48840D69E91B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2F16204F-3ECB-4AB4-852E-48840D69E91B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2F16204F-3ECB-4AB4-852E-48840D69E91B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4B25E20F-7DCA-46A3-ABE2-F71DFD69B9E6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4B25E20F-7DCA-46A3-ABE2-F71DFD69B9E6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4B25E20F-7DCA-46A3-ABE2-F71DFD69B9E6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4B25E20F-7DCA-46A3-ABE2-F71DFD69B9E6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
