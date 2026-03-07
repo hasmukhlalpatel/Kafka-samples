@@ -8,16 +8,13 @@
     <DockerfileContext>..\..</DockerfileContext>
     <RootNamespace>KafkaProducerWebApp</RootNamespace>
   </PropertyGroup>
-	<ItemGroup>
-		<PackageReference Include="Confluent.SchemaRegistry" Version="2.11.0" />
-		<PackageReference Include="Confluent.SchemaRegistry.Serdes.Avro" Version="2.11.0" />
-		<PackageReference Include="Confluent.SchemaRegistry.Serdes.Json" Version="2.11.0" />
-		<PackageReference Include="Newtonsoft.Json.Schema" Version="4.0.1" />
-	</ItemGroup>
-
-	<ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.7" />
-    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.22.1" />
+  <ItemGroup>
+  	<PackageReference Include="Newtonsoft.Json.Schema" Version="4.0.1" />
+      <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.7" />
+      <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.22.1" />
+  </ItemGroup>
+  <ItemGroup>
+      <ProjectReference Include="..\Kafka.Schemas.Shared\Kafka.Schemas.Shared.csproj" />
   </ItemGroup>
 
 </Project>
