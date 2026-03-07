@@ -1,8 +1,8 @@
-<Project Sdk="Aspire.AppHost.Sdk/13.1.0">
+﻿<Project Sdk="Aspire.AppHost.Sdk/13.1.2">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <UserSecretsId>ec506465-ecb5-4b60-99ed-8676f8a09498</UserSecretsId>
@@ -11,6 +11,12 @@
   <ItemGroup>
     <ProjectReference Include="..\src\KafkaConsumerApp\KafkaConsumerApp.csproj" />
     <ProjectReference Include="..\src\KafkaProducer.WebApp\KafkaProducer.WebApp.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting" Version="13.1.2" />
+    <PackageReference Include="Aspire.Hosting.Docker" Version="13.1.2-preview.1.26125.13" />
+    <PackageReference Include="Aspire.Hosting.Kafka" Version="13.1.2" />
   </ItemGroup>
 
 
