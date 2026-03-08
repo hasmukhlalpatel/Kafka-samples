@@ -1,12 +1,21 @@
 using Samples.Web.Shared.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+.AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true)
+.AddUserSecrets<Program>()
+.AddEnvironmentVariables();
 
+builder.Services.AddOTELObservability();
 builder.Services.AddSwaggerAndOpenApi();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+app
+    .UseObservability()
+    .UseCustomRequestResponseLogging()
+    .UseCustomExceptionHandling();
+
 app.UseSwaggerAndOpenApi();
 
 app.UseHttpsRedirection();
