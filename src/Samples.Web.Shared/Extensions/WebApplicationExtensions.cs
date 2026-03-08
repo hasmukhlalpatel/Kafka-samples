@@ -22,6 +22,18 @@ public static class WebApplicationExtensions
         app.UseMiddleware<RequestResponseLoggingMiddleware>();
         return app;
     }
+
+    public static WebApplication UseSwaggerAndOpenApi(this WebApplication app)
+    {
+        if (app.Environment.IsDevelopment())
+        {
+            app.MapOpenApi();
+            app.UseSwagger();
+            app.UseSwaggerUI();
+        }
+
+        return app;
+    }
 }
 
 

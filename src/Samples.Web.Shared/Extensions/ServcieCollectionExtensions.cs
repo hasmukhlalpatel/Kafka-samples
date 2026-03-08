@@ -54,6 +54,15 @@ public static class ServcieCollectionExtensions
         });
         return services;
     }
+
+    public static IServiceCollection AddSwaggerAndOpenApi(this IServiceCollection services)
+    {
+        // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+        services.AddOpenApi();
+        services.AddEndpointsApiExplorer();
+        services.AddSwaggerGen();
+        return services;
+    }
 }
 
 
