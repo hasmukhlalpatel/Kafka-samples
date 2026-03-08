@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
 
@@ -61,6 +62,13 @@ public static class ServcieCollectionExtensions
         services.AddOpenApi();
         services.AddEndpointsApiExplorer();
         services.AddSwaggerGen();
+        return services;
+    }
+
+    public static IServiceCollection AddDefaultHealthChecks(this IServiceCollection services) {
+        //services.AddHealthChecks();
+        services.AddHealthChecks()
+            .AddCheck("self", () => HealthCheckResult.Healthy(), ["live"]);
         return services;
     }
 }

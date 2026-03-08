@@ -6,8 +6,10 @@ builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnC
 .AddUserSecrets<Program>()
 .AddEnvironmentVariables();
 
-builder.Services.AddOTELObservability();
-builder.Services.AddSwaggerAndOpenApi();
+builder.Services
+    .AddOTELObservability()
+    .AddSwaggerAndOpenApi()
+    .AddDefaultHealthChecks();
 
 var app = builder.Build();
 
@@ -16,7 +18,9 @@ app
     .UseCustomRequestResponseLogging()
     .UseCustomExceptionHandling();
 
-app.UseSwaggerAndOpenApi();
+app
+    .UseSwaggerAndOpenApi()
+    .MapDefaultHealthEndpoints();
 
 app.UseHttpsRedirection();
 

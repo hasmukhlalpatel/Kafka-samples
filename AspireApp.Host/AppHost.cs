@@ -42,5 +42,6 @@ builder.AddProject<Projects.KafkaConsumerApp>("kafkaconsumerapp")
     .WaitFor(schemaRegistry);
 
 builder.AddProject<Projects.Samples_Web_Api>("samples-web-api");
+    //.WithHealthCheck("/health");
 
 builder.Build().Run();
