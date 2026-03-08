@@ -13,8 +13,4 @@
     <ProjectReference Include="..\src\KafkaProducer.WebApp\KafkaProducer.WebApp.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-  </ItemGroup>
-
-
 </Project>

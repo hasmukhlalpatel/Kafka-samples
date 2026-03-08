@@ -2,17 +2,21 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-	<TargetFramework>net10.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
-	<ItemGroup>
-		<PackageReference Include="Newtonsoft.Json.Schema" Version="4.0.1" />
-	</ItemGroup>
-	<ItemGroup>
-	  <ProjectReference Include="..\Kafka.Schemas.Shared\Kafka.Schemas.Shared.csproj" />
-	</ItemGroup>
-	<ItemGroup>
-	  <Folder Include="Schema\" />
-	</ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json.Schema" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Kafka.Schemas.Shared\Kafka.Schemas.Shared.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Schema\" />
+  </ItemGroup>
+
 </Project>

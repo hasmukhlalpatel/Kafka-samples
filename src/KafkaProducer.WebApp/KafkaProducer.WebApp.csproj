@@ -1,21 +1,23 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
-	  <TargetFramework>net10.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     <DockerfileContext>..\..</DockerfileContext>
     <RootNamespace>KafkaProducerWebApp</RootNamespace>
   </PropertyGroup>
+
   <ItemGroup>
-  	<PackageReference Include="Newtonsoft.Json.Schema" Version="4.0.1" />
-      <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.7" />
-      <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.22.1" />
+    <PackageReference Include="Newtonsoft.Json.Schema" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" />
   </ItemGroup>
+
   <ItemGroup>
-      <ProjectReference Include="..\Kafka.Schemas.Shared\Kafka.Schemas.Shared.csproj" />
-      <ProjectReference Include="..\Samples.Web.Shared\Samples.Web.Shared.csproj" />
+    <ProjectReference Include="..\Kafka.Schemas.Shared\Kafka.Schemas.Shared.csproj" />
+    <ProjectReference Include="..\Samples.Web.Shared\Samples.Web.Shared.csproj" />
   </ItemGroup>
 
 </Project>
