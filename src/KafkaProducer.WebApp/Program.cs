@@ -1,3 +1,6 @@
+using Microsoft.OpenApi;
+using Samples.Web.Shared.Extensions;
+
 namespace KafkaProducerWebApp
 {
     public class Program
@@ -5,18 +8,42 @@ namespace KafkaProducerWebApp
         public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+            builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+            .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true)
+            .AddUserSecrets<Program>()
+            .AddEnvironmentVariables();
+
+            builder.Services.AddOTELObservability();
 
             // Add services to the container.
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-            builder.Services.AddOpenApi();
+            builder.Services.AddOutputCache(options =>
+            {
+                options.AddBasePolicy(policy => policy.Expire(TimeSpan.FromMinutes(10)));
+            });
+            builder.Services.AddOpenApi(options =>
+            {
+                options.OpenApiVersion = OpenApiSpecVersion.OpenApi3_0;
+            });
+            builder.Services.AddOpenApi("v1"); //builder.Services.AddOpenApi(); // default to No version 
+            builder.Services.AddOpenApi("v2");
 
             var app = builder.Build();
 
-            // Configure the HTTP request pipeline.
+            app
+                .UseObservability()
+                .UseCustomRequestResponseLogging()
+                .UseCustomExceptionHandling();
+
+            app.UseOutputCache();
+
             if (app.Environment.IsDevelopment())
             {
-                app.MapOpenApi();
+                app.MapOpenApi()
+                    .CacheOutput();
             }
+
+            app.MapGet("/", () => "Hello world!");
 
             var summaries = new[]
             {

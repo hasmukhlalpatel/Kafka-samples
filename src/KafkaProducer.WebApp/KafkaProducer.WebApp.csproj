@@ -15,6 +15,7 @@
   </ItemGroup>
   <ItemGroup>
       <ProjectReference Include="..\Kafka.Schemas.Shared\Kafka.Schemas.Shared.csproj" />
+      <ProjectReference Include="..\Samples.Web.Shared\Samples.Web.Shared.csproj" />
   </ItemGroup>
 
 </Project>
