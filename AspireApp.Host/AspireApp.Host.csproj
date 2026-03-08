@@ -11,6 +11,7 @@
   <ItemGroup>
     <ProjectReference Include="..\src\KafkaConsumerApp\KafkaConsumerApp.csproj" />
     <ProjectReference Include="..\src\KafkaProducer.WebApp\KafkaProducer.WebApp.csproj" />
+    <ProjectReference Include="..\src\Samples.Web.Api\Samples.Web.Api.csproj" />
   </ItemGroup>
 
 </Project>

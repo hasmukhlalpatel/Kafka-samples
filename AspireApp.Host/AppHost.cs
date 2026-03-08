@@ -41,4 +41,6 @@ builder.AddProject<Projects.KafkaProducer_WebApp>("kafkaproducer-webapp")
 builder.AddProject<Projects.KafkaConsumerApp>("kafkaconsumerapp")
     .WaitFor(schemaRegistry);
 
+builder.AddProject<Projects.Samples_Web_Api>("samples-web-api");
+
 builder.Build().Run();
