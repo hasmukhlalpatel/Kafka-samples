@@ -16,6 +16,7 @@ podman compose up -d
 ```
 
 ## Working Aspire Sample with Zookeeper, Kafka broker and Schema-registry 
+### This is a Confluent Kafka KRaft-mode docker-compose setup (no Zookeeper), with Schema Registry included and Control Center commented out.
 `Note:` Not need any kafka pacakges to run follwing sample, as it is using REST API of schema-registry to register and fetch schemas.
 ```
 // Add Zookeeper container
