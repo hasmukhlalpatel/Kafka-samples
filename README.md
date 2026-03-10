@@ -105,7 +105,7 @@ schema-registry:
 #  image: confluentinc/cp-enterprise-control-center:latest
 ```
 
-sample2
+## This is a full Confluent Platform 7.6.1 KRaft-mode stack with broker, Schema Registry, Control Center, and REST Proxy — no Zookeeper needed.
 
 ```yaml
 ---
