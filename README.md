@@ -59,3 +59,48 @@ netstat -ano | findstr :29
 netstat -ano | findstr :92
 netstat -ano | findstr :81
 ```
+
+```yaml
+networks:
+    - local-network
+
+### KAFKA ###
+broker:
+  image: confluentinc/cp-kafka:latest
+  container_name: broker
+  ports:
+    - "9092:9092"
+    - "9093:9093"
+  environment:
+    CLUSTER_ID: 'YzkwZTdmNTYtNGF1ZC00NW'
+    KAFKA_NODE_ID: 1
+    KAFKA_PROCESS_ROLES: broker,controller
+    KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+    KAFKA_LISTENERS: PLAINTEXT://broker:29092,PLAINTEXT_HOST://0.0.0.0:9092,CONTROLLER://broker:29093
+    KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT,CONTROLLER:PLAINTEXT
+    KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker:29092,PLAINTEXT_HOST://localhost:9092
+    KAFKA_CONTROLLER_QUORUM_VOTERS: '1@broker:29093'
+    KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
+    KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+    KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+    KAFKA_AUTO_CREATE_TOPICS_ENABLE: true
+  networks:
+    - local-network
+
+schema-registry:
+  image: confluentinc/cp-schema-registry:latest
+  container_name: schema-registry
+  ports:
+    - "8081:8081"
+  environment:
+    SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: PLAINTEXT://broker:29092
+    SCHEMA_REGISTRY_HOST_NAME: localhost
+    SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+    SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_CLUSTER_ID: YzkwZTdmNTYtNGF1ZC00NW
+  networks:
+    - local-network
+
+#control-center:
+#  image: confluentinc/cp-enterprise-control-center:latest
+```
