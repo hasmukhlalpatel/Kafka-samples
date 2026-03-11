@@ -61,6 +61,8 @@ netstat -ano | findstr :92
 netstat -ano | findstr :81
 ```
 
+## This is a full Confluent Platform 7.6.1 KRaft-mode stack with broker, Schema Registry, and REST Proxy — no Zookeeper needed.
+
 ```yaml
 networks:
     - local-network
@@ -104,6 +106,25 @@ schema-registry:
 
 #control-center:
 #  image: confluentinc/cp-enterprise-control-center:latest
+  control-center:
+    image: confluentinc/cp-enterprise-control-center:7.6.1
+    hostname: control-center
+    container_name: control-center
+    depends_on:
+      - broker
+      - schema-registry
+    networks:
+      - my_network
+    ports:
+      - "9021:9021"
+    environment:
+      CONTROL_CENTER_BOOTSTRAP_SERVERS: 'broker:29092'
+      CONTROL_CENTER_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
+      CONTROL_CENTER_REPLICATION_FACTOR: 1
+      CONTROL_CENTER_INTERNAL_TOPICS_PARTITIONS: 1
+      CONTROL_CENTER_MONITORING_INTERCEPTOR_TOPIC_PARTITIONS: 1
+      CONFLUENT_METRICS_TOPIC_REPLICATION: 1
+      PORT: 9021
 ```
 
 ## This is a full Confluent Platform 7.6.1 KRaft-mode stack with broker, Schema Registry, Control Center, and REST Proxy — no Zookeeper needed.
