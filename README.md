@@ -61,6 +61,87 @@ netstat -ano | findstr :92
 netstat -ano | findstr :81
 ```
 
+## This is a full Confluent Platform 7.6.0 stack with Zookeeper, broker, and Schema Registry — Control Center is commented out for simplicity.
+`docker-compose.yml`
+```yaml
+# docker-compose.yml
+version: '3.8'
+
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.0 # Using a specific version for consistency
+    hostname: zookeeper
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - kafka-net
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.0 # Using a specific version for consistency
+    hostname: kafka
+    container_name: kafka
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181 # Connects to the zookeeper service
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0 # Speeds up consumer group rebalancing
+    depends_on:
+      - zookeeper # Ensures zookeeper starts before kafka
+    networks:
+      - kafka-net
+
+  schema-registry:
+    image: confluentinc/cp-schema-registry:7.6.0 # Using a specific version for consistency
+    hostname: schema-registry
+    container_name: schema-registry
+    ports:
+      - "8081:8081" # Default port for Schema Registry
+    environment:
+      SCHEMA_REGISTRY_HOSTNAME: schema-registry # Keep this for broader compatibility
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry # Added this to explicitly address the error
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081 # Exposes Schema Registry on all interfaces
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: kafka:29092 # Connects to Kafka via its internal Docker network address
+      SCHEMA_REGISTRY_KAFKASTORE_SECURITY_PROTOCOL: PLAINTEXT
+    depends_on:
+      - kafka # Ensures Kafka starts before Schema Registry
+    networks:
+      - kafka-net
+
+  control-center:
+    image: confluentinc/cp-enterprise-control-center:7.6.1
+    hostname: control-center
+    container_name: control-center
+    depends_on:
+      - kafka
+      - schema-registry
+    networks:
+      - kafka-net
+    ports:
+      - "9021:9021"
+    environment:
+      CONTROL_CENTER_BOOTSTRAP_SERVERS: 'kafka:29092'
+      CONTROL_CENTER_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
+      CONTROL_CENTER_REPLICATION_FACTOR: 1
+      CONTROL_CENTER_INTERNAL_TOPICS_PARTITIONS: 1
+      CONTROL_CENTER_MONITORING_INTERCEPTOR_TOPIC_PARTITIONS: 1
+      CONFLUENT_METRICS_TOPIC_REPLICATION: 1
+      PORT: 9021
+
+networks:
+  kafka-net:
+    driver: bridge
+
+```
+
 ## This is a full Confluent Platform 7.6.1 KRaft-mode stack with broker, Schema Registry, and REST Proxy — no Zookeeper needed.
 
 ```yaml
