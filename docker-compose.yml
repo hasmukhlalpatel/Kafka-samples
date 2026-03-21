@@ -24,7 +24,7 @@ services:
       - kafka-net
 
   schema-registry:
-    image: confluentinc/cp-schema-registry:7.6.0 # Using a specific version for consistency
+    image: confluentinc/cp-schema-registry:latest
     hostname: schema-registry
     container_name: schema-registry
     ports:
@@ -35,13 +35,14 @@ services:
       SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081 # Exposes Schema Registry on all interfaces
       SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: kafka:29092 # Connects to Kafka via its internal Docker network address
       SCHEMA_REGISTRY_KAFKASTORE_SECURITY_PROTOCOL: PLAINTEXT
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_CLUSTER_ID: YzkwZTdmNTYtNGF1ZC00NW
     depends_on:
       - kafka # Ensures Kafka starts before Schema Registry
     networks:
       - kafka-net
 
   control-center:
-    image: confluentinc/cp-enterprise-control-center:7.6.1
+    image: confluentinc/cp-enterprise-control-center:latest
     hostname: control-center
     container_name: control-center
     ports:
