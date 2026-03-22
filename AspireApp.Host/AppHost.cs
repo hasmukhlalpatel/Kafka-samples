@@ -1,5 +1,6 @@
 var builder = DistributedApplication.CreateBuilder(args);
 
+var testConnectionString = builder.AddConnectionString("TestDB");
 
 // Add Kafka container
 var kafka = builder.AddContainer("kafka", "confluentinc/cp-kafka")
@@ -40,7 +41,9 @@ builder.AddProject<Projects.KafkaProducer_WebApp>("kafkaproducer-webapp")
 builder.AddProject<Projects.KafkaConsumerApp>("kafkaconsumerapp")
     .WaitFor(schemaRegistry);
 
-builder.AddProject<Projects.Samples_Web_Api>("samples-web-api");
+builder.AddProject<Projects.Samples_Web_Api>("samples-web-api")
+    .WithReference(testConnectionString)
+    ;
     //.WithHealthCheck("/health");
 
 builder.Build().Run();
