@@ -1,4 +1,7 @@
-﻿namespace Sample.Web.Shared.Middleware;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
+
+namespace Sample.Web.Shared.Middleware;
 
 public class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<ExceptionHandlingMiddleware> logger)
 {

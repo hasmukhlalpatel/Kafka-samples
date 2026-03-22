@@ -1,4 +1,6 @@
-﻿namespace Sample.Web.Shared.Middleware;
+﻿using Microsoft.AspNetCore.Http;
+
+namespace Sample.Web.Shared.Middleware;
 
 public class JwtValidationMiddleware(RequestDelegate next)
 {

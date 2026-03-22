@@ -1,4 +1,7 @@
-﻿using Sample.Web.Shared.Middleware;
+﻿using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Hosting;
+using Sample.Web.Shared.Middleware;
 
 namespace Samples.Web.Shared.Extensions;
 

@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -12,10 +12,15 @@
     <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
     <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" />
     <PackageReference Include="OpenTelemetry.Instrumentation.Http" />
+	<PackageReference Include="OpenTelemetry.Instrumentation.Runtime"/>
 	<PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+	<PackageReference Include="Microsoft.Extensions.Http.Resilience"/>
+	<FrameworkReference Include="Microsoft.AspNetCore.App" />
+	<PackageReference Include="Microsoft.Extensions.ServiceDiscovery"/>
 	<PackageReference Include="SourceFlow.Stores.EntityFramework" />
 	<PackageReference Include="Swashbuckle.AspNetCore" />
 	<PackageReference Include="Swashbuckle.AspNetCore.Swagger" />
+	  
   </ItemGroup>
 
 </Project>
