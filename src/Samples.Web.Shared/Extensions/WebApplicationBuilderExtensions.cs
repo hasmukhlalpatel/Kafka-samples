@@ -69,9 +69,9 @@ public static class WebApplicationBuilderExtensions
                             activity.SetTag("exception.source", exception.Source);
                         }
                     };
-                })
+                });
                 //.AddHttpClientInstrumentation()
-                .AddEntityFrameworkCoreInstrumentation();
+                //.AddEntityFrameworkCoreInstrumentation(); // reqiure  SourceFlow.Stores.EntityFramework package
 
                 tracing.AddOtlpExporter();
             });

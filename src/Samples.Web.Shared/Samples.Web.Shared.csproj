@@ -17,7 +17,8 @@
 	<PackageReference Include="Microsoft.Extensions.Http.Resilience"/>
 	<FrameworkReference Include="Microsoft.AspNetCore.App" />
 	<PackageReference Include="Microsoft.Extensions.ServiceDiscovery"/>
-	<PackageReference Include="SourceFlow.Stores.EntityFramework" />
+	<!--<PackageReference Include="SourceFlow.Stores.EntityFramework" />-->
+	  <!--for EF core Instrumentation-->
 	<PackageReference Include="Swashbuckle.AspNetCore" />
 	<PackageReference Include="Swashbuckle.AspNetCore.Swagger" />
 	  
