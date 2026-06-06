@@ -34,8 +34,8 @@ public static class WebApplicationBuilderExtensions
                 //    "System.Net.Http",
                 //    "Samples.Web.Api.Metrics");
                 matrix
-                .AddAspNetCoreInstrumentation()
-                .AddHttpClientInstrumentation();
+                .AddAspNetCoreInstrumentation();
+                //.AddHttpClientInstrumentation();
 
                 matrix.AddMeter(DiagnosticsConfiguration.Meter.Name);
 
@@ -70,7 +70,7 @@ public static class WebApplicationBuilderExtensions
                         }
                     };
                 })
-                .AddHttpClientInstrumentation()
+                //.AddHttpClientInstrumentation()
                 .AddEntityFrameworkCoreInstrumentation();
 
                 tracing.AddOtlpExporter();

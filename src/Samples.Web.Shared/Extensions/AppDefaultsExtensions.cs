@@ -39,7 +39,9 @@ public static class AppDefaultsExtensions
         builder.Services.AddOpenTelemetry()
             .WithMetrics(static metrics =>
             {
-                metrics.AddRuntimeInstrumentation();
+                metrics.AddAspNetCoreInstrumentation();
+                //.AddHttpClientInstrumentation()
+                //.AddRuntimeInstrumentation();
             })
             .WithTracing(tracing =>
             {
@@ -49,9 +51,9 @@ public static class AppDefaultsExtensions
                     tracing.SetSampler(new AlwaysOnSampler());
                 }
 
-                tracing
-                //.AddGrpcClientInstrumentation()
-                       .AddHttpClientInstrumentation();
+                //tracing
+                ////.AddGrpcClientInstrumentation()
+                //       .AddHttpClientInstrumentation();
             });
 
         builder.AddOpenTelemetryExporters();

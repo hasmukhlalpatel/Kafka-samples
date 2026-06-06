@@ -7,6 +7,7 @@
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     <DockerfileContext>..\..</DockerfileContext>
     <RootNamespace>KafkaProducerWebApp</RootNamespace>
+    <UserSecretsId>83b966a4-8fc7-49dd-908b-8ee509b9a91e</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
