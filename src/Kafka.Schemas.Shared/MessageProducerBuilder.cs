@@ -25,6 +25,7 @@ namespace Kafka.Schemas.Shared
                 AutoRegisterSchemas = false, // Set this back to true for auto-registration
                 UseLatestVersion = true,
                 LatestCompatibilityStrict = true,
+                Validate = false, // Set this back to true for validation
             };
             _producer = InitializeProducer(producerConfig, config, jsonSerializerConfig);
         }

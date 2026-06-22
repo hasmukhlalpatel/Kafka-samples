@@ -24,7 +24,10 @@ namespace KafkaConsumerApp
                 BootstrapServers = bootstrapServers,
                 GroupId = groupId,
                 AutoOffsetReset = AutoOffsetReset.Earliest,
-                EnableAutoCommit = true
+                EnableAutoCommit = true,
+                // Key settings for parallel processing
+                //MaxPollRecords = 500,  // Batch size
+                FetchMinBytes = 1024,  // Min bytes before returning
             };
 
             var schemaRegistryConfig = new SchemaRegistryConfig { Url = schemaRegistryUrl };

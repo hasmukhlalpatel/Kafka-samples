@@ -4,7 +4,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <UserSecretsId>f25c10fb-f676-471e-b524-3081f0c5cacc</UserSecretsId>
+	  <UserSecretsId>f25c10fb-f676-471e-b524-3081f0c5cacc-web</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     <DockerfileContext>..\..</DockerfileContext>
   </PropertyGroup>
