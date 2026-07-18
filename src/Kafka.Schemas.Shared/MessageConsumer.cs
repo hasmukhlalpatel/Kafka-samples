@@ -1,4 +1,5 @@
 ﻿using Confluent.Kafka;
+using Kafka.Schemas.Shared.Serialization;
 using Microsoft.Extensions.Logging;
 
 namespace Kafka.Schemas.Shared;
@@ -24,14 +25,14 @@ public class MessageConsumer<TKey, TValue> : IMessageConsumer<TKey, TValue>
     {
         ArgumentException.ThrowIfNullOrEmpty(topic, nameof(topic));
         ArgumentException.ThrowIfNullOrEmpty(groupId, nameof(groupId));
-        
+
         _logger.BeginScope(new Dictionary<string, object>
         {
             ["Topic"] = topic,
             ["GroupId"] = groupId
         });
 
-        using (var consumer = new ConsumerBuilder<TKey, TValue>(_consumerConfig).Build())
+        using (var consumer = BuildConsumer())
         {
             _logger.LogInformation($"Starting consumer for topic '{topic}' with group ID '{groupId}'");
             consumer.Subscribe(topic);
@@ -65,5 +66,12 @@ public class MessageConsumer<TKey, TValue> : IMessageConsumer<TKey, TValue>
                 consumer.Close();
             }
         }
+    }
+
+    private IConsumer<TKey, TValue> BuildConsumer()
+    {
+        return new ConsumerBuilder<TKey, TValue>(_consumerConfig)
+            .SetValueDeserializer(new CustomDeserializer<TValue>())
+            .Build();
     }
 }
