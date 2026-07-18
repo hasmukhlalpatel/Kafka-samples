@@ -1,117 +1,119 @@
-﻿using Confluent.Kafka;
+﻿using Avro;
+using Confluent.Kafka;
 using Confluent.SchemaRegistry;
 using Confluent.SchemaRegistry.Serdes;
+using Newtonsoft.Json.Linq;
+using NJsonSchema.Generation;
 using System.Text;
 
-namespace Kafka.Schemas.Shared
-{
-    public class MessageProducerBuilder<TKey, TValue> : IDisposable, 
-        IMessageProducerBuilder<TKey, TValue>
-        where TValue : class
-    {
-        private readonly IProducer<TKey, TValue> _producer = null;
+namespace Kafka.Schemas.Shared;
 
-        private readonly JsonSerializerConfig _jsonSerializerConfig = new JsonSerializerConfig
+public class MessageProducerBuilder<TKey, TValue> : IDisposable, 
+    IMessageProducerBuilder<TKey, TValue>
+    where TValue : class
+{
+    private readonly IProducer<TKey, TValue> _producer = null;
+
+    private readonly JsonSerializerConfig _jsonSerializerConfig = new JsonSerializerConfig
+    {
+        AutoRegisterSchemas = false, // Set this back to true for auto-registration
+        UseLatestVersion = true,
+        LatestCompatibilityStrict = true,
+        Validate = false, // Set this back to true for validation
+    };
+
+    internal MessageProducerBuilder()
+    {
+        var producerConfig = new ProducerConfig { BootstrapServers = KafkaConfig.Default.BootstrapServers };
+
+        var config = new SchemaRegistryConfig
         {
-            AutoRegisterSchemas = false, // Set this back to true for auto-registration
-            UseLatestVersion = true,
-            LatestCompatibilityStrict = true,
-            Validate = false, // Set this back to true for validation
+            Url = KafkaConfig.Default.SchemaRegistryUrl
         };
 
-        internal MessageProducerBuilder()
+        var schemaRegistry = new CachedSchemaRegistryClient(config);
+        var jsonSerializer = new JsonSerializer<TValue>(schemaRegistry, _jsonSerializerConfig);
+
+        _producer = InitializeProducer(producerConfig, jsonSerializer);
+    }
+
+    public MessageProducerBuilder(ProducerConfig producerConfig,
+        SchemaRegistryConfig config,
+        JsonSerializerConfig? jsonSerializerConfig = null)
+    {
+        jsonSerializerConfig ??= _jsonSerializerConfig;
+        ArgumentNullException.ThrowIfNull(config, nameof(config));
+
+        var schemaRegistry = new CachedSchemaRegistryClient(config);
+        var jsonSerializer = new JsonSerializer<TValue>(schemaRegistry, jsonSerializerConfig);
+
+        _producer = InitializeProducer(producerConfig, jsonSerializer);
+    }
+
+    public MessageProducerBuilder(ProducerConfig producerConfig, IAsyncSerializer<TValue> serializer)
+    {
+        _producer = InitializeProducer(producerConfig, serializer);
+    }
+
+    private IProducer<TKey, TValue> InitializeProducer(ProducerConfig producerConfig, IAsyncSerializer<TValue> serializer)
+    {
+        if (_producer == null)
         {
-            var producerConfig = new ProducerConfig { BootstrapServers = KafkaConfig.Default.BootstrapServers };
+            ArgumentNullException.ThrowIfNull(serializer, nameof(serializer));
 
-            var config = new SchemaRegistryConfig
-            {
-                Url = KafkaConfig.Default.SchemaRegistryUrl
-            };
-
-            var schemaRegistry = new CachedSchemaRegistryClient(config);
-            var jsonSerializer = new JsonSerializer<TValue>(schemaRegistry, _jsonSerializerConfig);
-
-            _producer = InitializeProducer(producerConfig, jsonSerializer);
+            return new ProducerBuilder<TKey, TValue>(producerConfig)
+                .SetValueSerializer(serializer)
+                    .Build();
         }
+        return _producer;
+    }
 
-        public MessageProducerBuilder(ProducerConfig producerConfig,
-            SchemaRegistryConfig config,
-            JsonSerializerConfig? jsonSerializerConfig = null)
+    public async Task ProduceAsync(string topic, Message<TKey, TValue> message,
+        CancellationToken cancellationToken = default(CancellationToken))
+    {
+        try
         {
-            jsonSerializerConfig ??= _jsonSerializerConfig;
-            ArgumentNullException.ThrowIfNull(config, nameof(config));
-
-            var schemaRegistry = new CachedSchemaRegistryClient(config);
-            var jsonSerializer = new JsonSerializer<TValue>(schemaRegistry, jsonSerializerConfig);
-
-            _producer = InitializeProducer(producerConfig, jsonSerializer);
+            var deliveryResult = await _producer.ProduceAsync(topic, message, cancellationToken);
+            Console.WriteLine($"Message delivered to {deliveryResult.TopicPartitionOffset}");
         }
-
-        public MessageProducerBuilder(ProducerConfig producerConfig, IAsyncSerializer<TValue> serializer)
+        catch (ProduceException<TKey, TValue> e)
         {
-            _producer = InitializeProducer(producerConfig, serializer);
+            Console.WriteLine($"Delivery failed: {e.Error.Reason}");
         }
-
-        private IProducer<TKey, TValue> InitializeProducer(ProducerConfig producerConfig, IAsyncSerializer<TValue> serializer)
+        catch (Exception ex)
         {
-            if (_producer == null)
-            {
-                ArgumentNullException.ThrowIfNull(serializer, nameof(serializer));
-
-                return new ProducerBuilder<TKey, TValue>(producerConfig)
-                    .SetValueSerializer(serializer)
-                        .Build();
-            }
-            return _producer;
+            Console.WriteLine($"An error occurred while producing the message: {ex.Message}");
         }
-
-        public async Task ProduceAsync(string topic, Message<TKey, TValue> message,
-            CancellationToken cancellationToken = default(CancellationToken))
+    }
+    public async Task ProduceAsync(string topic, TKey key, TValue value, IReadOnlyDictionary<string, string> headers,
+        CancellationToken cancellationToken = default(CancellationToken))
+    {
+        try
         {
-            try
+            var messageHeaders = new Headers();
+            if (headers != null)
             {
-                var deliveryResult = await _producer.ProduceAsync(topic, message, cancellationToken);
-                Console.WriteLine($"Message delivered to {deliveryResult.TopicPartitionOffset}");
-            }
-            catch (ProduceException<TKey, TValue> e)
-            {
-                Console.WriteLine($"Delivery failed: {e.Error.Reason}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"An error occurred while producing the message: {ex.Message}");
-            }
-        }
-        public async Task ProduceAsync(string topic, TKey key, TValue value, IReadOnlyDictionary<string, string> headers,
-            CancellationToken cancellationToken = default(CancellationToken))
-        {
-            try
-            {
-                var messageHeaders = new Headers();
-                if (headers != null)
+                foreach (var header in headers)
                 {
-                    foreach (var header in headers)
-                    {
-                        messageHeaders.Add(header.Key, Encoding.UTF8.GetBytes(header.Value));
-                    }
+                    messageHeaders.Add(header.Key, Encoding.UTF8.GetBytes(header.Value));
                 }
-                var message = new Message<TKey, TValue>
-                {
-                    Key = key,
-                    Value = value,
-                    Headers = messageHeaders
-                };
-                var deliveryResult = await _producer.ProduceAsync(topic, message, cancellationToken);
-                Console.WriteLine($"Message delivered to {deliveryResult.TopicPartitionOffset}");
             }
-            catch (ProduceException<TKey, TValue> e)
+            var message = new Message<TKey, TValue>
             {
-                Console.WriteLine($"Delivery failed: {e.Error.Reason}");
-            }
+                Key = key,
+                Value = value,
+                Headers = messageHeaders
+            };
+            var deliveryResult = await _producer.ProduceAsync(topic, message, cancellationToken);
+            Console.WriteLine($"Message delivered to {deliveryResult.TopicPartitionOffset}");
         }
-        public void Dispose()
+        catch (ProduceException<TKey, TValue> e)
         {
-            _producer?.Dispose();
+            Console.WriteLine($"Delivery failed: {e.Error.Reason}");
         }
+    }
+    public void Dispose()
+    {
+        _producer?.Dispose();
     }
 }
