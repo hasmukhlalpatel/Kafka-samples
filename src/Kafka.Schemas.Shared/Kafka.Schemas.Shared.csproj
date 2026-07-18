@@ -11,5 +11,7 @@
     <PackageReference Include="Confluent.SchemaRegistry.Serdes.Json" />
     <PackageReference Include="Confluent.SchemaRegistry.Serdes.Avro" />
   </ItemGroup>
-
+	<ItemGroup>
+		<InternalsVisibleTo Include="KafkaProducer.WebApp.Tests" />
+	</ItemGroup>
 </Project>

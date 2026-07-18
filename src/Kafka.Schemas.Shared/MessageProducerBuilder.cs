@@ -11,7 +11,15 @@ namespace Kafka.Schemas.Shared
     {
         private readonly IProducer<TKey, TValue> _producer = null;
 
-        public MessageProducerBuilder()
+        private readonly JsonSerializerConfig _jsonSerializerConfig = new JsonSerializerConfig
+        {
+            AutoRegisterSchemas = false, // Set this back to true for auto-registration
+            UseLatestVersion = true,
+            LatestCompatibilityStrict = true,
+            Validate = false, // Set this back to true for validation
+        };
+
+        internal MessageProducerBuilder()
         {
             var producerConfig = new ProducerConfig { BootstrapServers = KafkaConfig.Default.BootstrapServers };
 
@@ -20,34 +28,43 @@ namespace Kafka.Schemas.Shared
                 Url = KafkaConfig.Default.SchemaRegistryUrl
             };
 
-            var jsonSerializerConfig = new JsonSerializerConfig
-            {
-                AutoRegisterSchemas = false, // Set this back to true for auto-registration
-                UseLatestVersion = true,
-                LatestCompatibilityStrict = true,
-                Validate = false, // Set this back to true for validation
-            };
-            _producer = InitializeProducer(producerConfig, config, jsonSerializerConfig);
+            var schemaRegistry = new CachedSchemaRegistryClient(config);
+            var jsonSerializer = new JsonSerializer<TValue>(schemaRegistry, _jsonSerializerConfig);
+
+            _producer = InitializeProducer(producerConfig, jsonSerializer);
         }
 
         public MessageProducerBuilder(ProducerConfig producerConfig,
-            SchemaRegistryConfig config, JsonSerializerConfig jsonSerializerConfig)
+            SchemaRegistryConfig config,
+            JsonSerializerConfig? jsonSerializerConfig = null)
         {
-            _producer = InitializeProducer(producerConfig, config, jsonSerializerConfig);
+            jsonSerializerConfig ??= _jsonSerializerConfig;
+            ArgumentNullException.ThrowIfNull(config, nameof(config));
+
+            var schemaRegistry = new CachedSchemaRegistryClient(config);
+            var jsonSerializer = new JsonSerializer<TValue>(schemaRegistry, jsonSerializerConfig);
+
+            _producer = InitializeProducer(producerConfig, jsonSerializer);
         }
 
-        private IProducer<TKey, TValue> InitializeProducer(ProducerConfig producerConfig,
-            SchemaRegistryConfig config, JsonSerializerConfig jsonSerializerConfig)
+        public MessageProducerBuilder(ProducerConfig producerConfig, IAsyncSerializer<TValue> serializer)
+        {
+            _producer = InitializeProducer(producerConfig, serializer);
+        }
+
+        private IProducer<TKey, TValue> InitializeProducer(ProducerConfig producerConfig, IAsyncSerializer<TValue> serializer)
         {
             if (_producer == null)
             {
-                var schemaRegistry = new CachedSchemaRegistryClient(config);
+                ArgumentNullException.ThrowIfNull(serializer, nameof(serializer));
+
                 return new ProducerBuilder<TKey, TValue>(producerConfig)
-                            .SetValueSerializer(new JsonSerializer<TValue>(schemaRegistry, jsonSerializerConfig))
-                            .Build();
+                    .SetValueSerializer(serializer)
+                        .Build();
             }
             return _producer;
         }
+
         public async Task ProduceAsync(string topic, Message<TKey, TValue> message,
             CancellationToken cancellationToken = default(CancellationToken))
         {
