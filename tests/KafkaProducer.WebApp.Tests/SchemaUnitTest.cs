@@ -1,5 +1,6 @@
 ﻿using Confluent.Kafka;
 using Kafka.Schemas.Shared;
+using Microsoft.Extensions.Logging;
 namespace KafkaProducer.WebApp.Tests
 {
     public class SchemaUnitTest
@@ -14,7 +15,9 @@ namespace KafkaProducer.WebApp.Tests
                 var id = await schemaRegistry.RegisterSchemaAsync(topicName, SchemaGenerator.GenerateSchemaJson<TestMessage>());
             }
 
-            using (var producer = new MessageProducerBuilder<Confluent.Kafka.Null, TestMessage>())
+            var logger= new LoggerFactory().CreateLogger<MessageProducerBuilder<Confluent.Kafka.Null, TestMessage>>();
+
+            using (var producer = new MessageProducerBuilder<Confluent.Kafka.Null, TestMessage>(logger))
             {
                 var customer = new TestCustomer
                 {
