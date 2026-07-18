@@ -15,9 +15,9 @@ namespace KafkaProducer.WebApp.Tests
                 var id = await schemaRegistry.RegisterSchemaAsync(topicName, SchemaGenerator.GenerateSchemaJson<TestMessage>());
             }
 
-            var logger= new LoggerFactory().CreateLogger<MessageProducerBuilder<Confluent.Kafka.Null, TestMessage>>();
+            var logger= new LoggerFactory().CreateLogger<MessageProducer<Confluent.Kafka.Null, TestMessage>>();
 
-            using (var producer = new MessageProducerBuilder<Confluent.Kafka.Null, TestMessage>(logger))
+            using (var producer = new MessageProducer<Confluent.Kafka.Null, TestMessage>(logger))
             {
                 var customer = new TestCustomer
                 {

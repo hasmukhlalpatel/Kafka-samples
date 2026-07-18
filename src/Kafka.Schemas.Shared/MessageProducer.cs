@@ -7,8 +7,7 @@ using System.Text;
 
 namespace Kafka.Schemas.Shared;
 
-public class MessageProducerBuilder<TKey, TValue> : IDisposable, 
-    IMessageProducerBuilder<TKey, TValue>
+public class MessageProducer<TKey, TValue> : IMessageProducer<TKey, TValue>
     where TValue : class
 {
     private readonly IProducer<TKey, TValue> _producer = null;
@@ -23,9 +22,9 @@ public class MessageProducerBuilder<TKey, TValue> : IDisposable,
         Validate = false, // Set this back to true for validation
     };
     private readonly IAsyncSerializer<TValue> _serializer;
-    private readonly ILogger<MessageProducerBuilder<TKey, TValue>> _logger;
+    private readonly ILogger<MessageProducer<TKey, TValue>> _logger;
 
-    internal MessageProducerBuilder(ILogger<MessageProducerBuilder<TKey, TValue>> logger)
+    internal MessageProducer(ILogger<MessageProducer<TKey, TValue>> logger)
     {
         var producerConfig = new ProducerConfig { BootstrapServers = KafkaConfig.Default.BootstrapServers };
 
@@ -41,9 +40,9 @@ public class MessageProducerBuilder<TKey, TValue> : IDisposable,
         _logger = logger;
     }
 
-    public MessageProducerBuilder(ProducerConfig producerConfig,
+    public MessageProducer(ProducerConfig producerConfig,
         SchemaRegistryConfig config,
-        ILogger<MessageProducerBuilder<TKey, TValue>> logger,
+        ILogger<MessageProducer<TKey, TValue>> logger,
         JsonSerializerConfig? jsonSerializerConfig = null)
     {
         jsonSerializerConfig ??= _jsonSerializerConfig;
@@ -56,9 +55,7 @@ public class MessageProducerBuilder<TKey, TValue> : IDisposable,
         _producer = InitializeProducer(producerConfig, _serializer);
     }
 
-    public MessageProducerBuilder(ProducerConfig producerConfig,
-        IAsyncSerializer<TValue> serializer,
-        ILogger<MessageProducerBuilder<TKey, TValue>> logger)
+    public MessageProducer(ProducerConfig producerConfig, IAsyncSerializer<TValue> serializer, ILogger<MessageProducer<TKey, TValue>> logger)
     {
         _producer = InitializeProducer(producerConfig, serializer);
         _serializer = serializer;
@@ -66,12 +63,12 @@ public class MessageProducerBuilder<TKey, TValue> : IDisposable,
     }
 
     /// <summary>
-    /// Initializes a new instance of the MessageProducerBuilder class with the specified ProducerConfig.
+    /// Initializes a new instance of the MessageProducer class with the specified ProducerConfig.
     /// No schema registry client is used, and a custom serializer is created for TValue.
     /// </summary>
     /// <param name="producerConfig"></param>
     /// <param name="logger"></param>
-    public MessageProducerBuilder(ProducerConfig producerConfig, ILogger<MessageProducerBuilder<TKey, TValue>> logger = null)
+    public MessageProducer(ProducerConfig producerConfig, ILogger<MessageProducer<TKey, TValue>> logger)
     {
         _serializer = new CustomSerializer<TValue>();
         _producer = InitializeProducer(producerConfig, _serializer);
