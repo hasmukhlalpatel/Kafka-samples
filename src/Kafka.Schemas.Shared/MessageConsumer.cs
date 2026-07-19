@@ -1,4 +1,7 @@
 ﻿using Confluent.Kafka;
+using Confluent.Kafka.SyncOverAsync;
+using Confluent.SchemaRegistry;
+using Confluent.SchemaRegistry.Serdes;
 using Kafka.Schemas.Shared.Serialization;
 using Microsoft.Extensions.Logging;
 
@@ -9,11 +12,49 @@ public class MessageConsumer<TKey, TValue> : IMessageConsumer<TKey, TValue>
 {
     private readonly ConsumerConfig _consumerConfig;
     private readonly ILogger<MessageConsumer<TKey, TValue>> _logger;
+    private readonly CachedSchemaRegistryClient? schemaRegistryClient;
+    private readonly IDeserializer<TValue> _deserializer;
+
+    private readonly JsonSerializerConfig _jsonSerializerConfig = new JsonSerializerConfig
+    {
+        AutoRegisterSchemas = false, // Set this back to true for auto-registration
+        UseLatestVersion = true,
+        LatestCompatibilityStrict = true,
+        Validate = false, // Set this back to true for validation
+    };
 
     public MessageConsumer(ConsumerConfig consumerConfig, ILogger<MessageConsumer<TKey, TValue>> logger)
     {
         _consumerConfig = consumerConfig;
         _logger = logger;
+        _deserializer = new CustomDeserializer<TValue>();
+    }
+
+    public MessageConsumer(ConsumerConfig consumerConfig, IDeserializer<TValue> deserializer, ILogger<MessageConsumer<TKey, TValue>> logger)
+    {
+        _consumerConfig = consumerConfig;
+        _logger = logger;
+        _deserializer = deserializer;
+    }
+
+    public MessageConsumer(ConsumerConfig consumerConfig,
+        SchemaRegistryConfig config,
+        ILogger<MessageConsumer<TKey, TValue>> logger,
+        JsonSerializerConfig? jsonSerializerConfig = null)
+    {
+        jsonSerializerConfig ??= _jsonSerializerConfig;
+        ArgumentNullException.ThrowIfNull(config, nameof(config));
+        _logger = logger;
+
+        schemaRegistryClient = new CachedSchemaRegistryClient(config);
+        _deserializer = new JsonDeserializer<TValue>(schemaRegistryClient, jsonSerializerConfig).AsSyncOverAsync();
+    }
+
+    private IConsumer<TKey, TValue> BuildConsumer()
+    {
+        return new ConsumerBuilder<TKey, TValue>(_consumerConfig)
+            .SetValueDeserializer(_deserializer)
+            .Build();
     }
 
     public void StartConsuming(string topic, Func<TKey, TValue, ConsumeStatus> consumerFactory, CancellationToken cancellationToken = default)
@@ -66,12 +107,5 @@ public class MessageConsumer<TKey, TValue> : IMessageConsumer<TKey, TValue>
                 consumer.Close();
             }
         }
-    }
-
-    private IConsumer<TKey, TValue> BuildConsumer()
-    {
-        return new ConsumerBuilder<TKey, TValue>(_consumerConfig)
-            .SetValueDeserializer(new CustomDeserializer<TValue>())
-            .Build();
     }
 }
