@@ -5,7 +5,13 @@ namespace Observability.Shared;
 
 public sealed class ActivitySourceProvider
 {
-    private ActivitySourceProvider() { }
+    public ActivitySourceProvider() { }
+
+    public ActivitySourceProvider(string activitySourceName) 
+    {
+        Initialize(activitySourceName);
+    }
+
     public void Initialize(string activitySourceName)
     {
         if (string.IsNullOrWhiteSpace(activitySourceName))

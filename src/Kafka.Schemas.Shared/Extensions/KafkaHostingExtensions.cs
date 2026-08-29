@@ -1,5 +1,6 @@
 ﻿using Confluent.Kafka;
 using Confluent.SchemaRegistry;
+using Confluent.SchemaRegistry.Serdes;
 using Kafka.Schemas.Shared.Serialization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -107,4 +108,30 @@ public static class KafkaHostingExtensions
         });
         return services;
     }
+    public static IServiceCollection AddMessageProducer<TKey, TValue>(this IServiceCollection services,
+        ISerializer<TValue>? serializer = null)
+        where TValue : class
+    {
+        services.AddSingleton<IMessageProducer<TKey, TValue>>(sp =>
+        {
+            var producerConfig = sp.GetRequiredService<ProducerConfig>();
+            var logger = sp.GetRequiredService<ILogger<MessageProducer<TKey, TValue>>>();
+            return new MessageProducer<TKey, TValue>(producerConfig, serializer, logger);
+        });
+        return services;
+    }
+    public static IServiceCollection AddMessageProducerWithSchemaRegistry<TKey, TValue>(this IServiceCollection services,
+    JsonSerializerConfig? jsonSerializerConfig = null)
+    where TValue : class
+    {
+        services.AddSingleton<IMessageProducer<TKey, TValue>>(sp =>
+        {
+            var producerConfig = sp.GetRequiredService<ProducerConfig>();
+            var schemaRegistryConfig = sp.GetRequiredService<SchemaRegistryConfig>();
+            var logger = sp.GetRequiredService<ILogger<MessageProducer<TKey, TValue>>>();
+            return new MessageProducer<TKey, TValue>(producerConfig, schemaRegistryConfig, logger, jsonSerializerConfig);
+        });
+        return services;
+    }
+
 }

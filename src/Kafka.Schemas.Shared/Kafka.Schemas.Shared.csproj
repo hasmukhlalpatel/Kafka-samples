@@ -16,4 +16,7 @@
 	<ItemGroup>
 		<InternalsVisibleTo Include="KafkaProducer.WebApp.Tests" />
 	</ItemGroup>
+	<ItemGroup>
+	  <ProjectReference Include="..\Observability.Shared\Observability.Shared.csproj" />
+	</ItemGroup>
 </Project>

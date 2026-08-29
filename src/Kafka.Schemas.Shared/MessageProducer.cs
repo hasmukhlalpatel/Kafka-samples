@@ -1,8 +1,10 @@
 ﻿using Confluent.Kafka;
 using Confluent.SchemaRegistry;
 using Confluent.SchemaRegistry.Serdes;
+using Kafka.Schemas.Shared.Extensions;
 using Kafka.Schemas.Shared.Serialization;
 using Microsoft.Extensions.Logging;
+using Observability.Shared;
 using System.Text;
 
 namespace Kafka.Schemas.Shared;
@@ -87,10 +89,15 @@ public class MessageProducer<TKey, TValue> : IMessageProducer<TKey, TValue>
         return _producer;
     }
 
+    private ActivitySourceProvider activitySource = new ActivitySourceProvider("Kafka.MessageProducer");
+
     public async Task ProduceAsync(string topic, Message<TKey, TValue> message, CancellationToken cancellationToken = default)
     {
+        var activity = activitySource.StartProducerActivity(topic);
         try
         {
+            message.Headers ??= new Headers();
+            message.Headers.AddHeader(LogicalCallContext.Constants.XCorrelationId, ApplicationContextScope.Current.CorrelationId);
             var deliveryResult = await _producer.ProduceAsync(topic, message, cancellationToken);
             _logger.LogInformation($"Message delivered to {deliveryResult.TopicPartitionOffset}");
         }
