@@ -23,21 +23,19 @@ public class CustomAsyncDeserializer<TValue> : IAsyncDeserializer<TValue>
 
     public async Task<TValue> DeserializeAsync(ReadOnlyMemory<byte> data, bool isNull, SerializationContext context)
     {
-        if (isNull || data.IsEmpty)
+        if (isNull || data.IsEmpty || data.Length == 0)
         {
             return default;
         }
 
-        using (var memoryStream = new MemoryStream(data.ToArray()))
+        var jsonPosition = 0;
+        if (data.Span[0] == 0) // Check for magic byte
         {
-            using (var streamReader = new StreamReader(memoryStream, Encoding.UTF8))
-            {
-                // Skip the first byte (magic byte)
-                var magicBytes = new char[4];
-                var magicByte = streamReader.Read(magicBytes, 0, 4);
-                string jsonText = await streamReader.ReadToEndAsync();
-                return JsonConvert.DeserializeObject<TValue>(jsonText, jsonSchemaGeneratorSettingsSerializerSettings);
-            }
+            var schemaIdBytes = data.Slice(1, 4).ToArray();
+            jsonPosition = 5;
         }
+        var jsonText = Encoding.UTF8.GetString(data.Slice(jsonPosition).ToArray());
+
+        return JsonConvert.DeserializeObject<TValue>(jsonText, jsonSchemaGeneratorSettingsSerializerSettings);
     }
 }

@@ -8,6 +8,7 @@ namespace Kafka.Schemas.Shared.Serialization;
 
 public class CustomSerializer<TValue> : IAsyncSerializer<TValue>
 {
+    private readonly int defaultSchemaId;
     private readonly NewtonsoftJsonSchemaGeneratorSettings? _jsonSchemaGeneratorSettings;
     private JsonSerializerSettings? jsonSchemaGeneratorSettingsSerializerSettings => _jsonSchemaGeneratorSettings?.SerializerSettings;
     private readonly JsonSchema _schema;
@@ -15,12 +16,12 @@ public class CustomSerializer<TValue> : IAsyncSerializer<TValue>
     public string schemaText => _schema.ToJson();
     public JsonSchema schema => _schema;
 
-    public CustomSerializer(NewtonsoftJsonSchemaGeneratorSettings? jsonSchemaGeneratorSettings = null)
+    public CustomSerializer(int defaultSchemaId = 0, NewtonsoftJsonSchemaGeneratorSettings? jsonSchemaGeneratorSettings = null)
     {
         _schema = ((jsonSchemaGeneratorSettings == null) 
             ? NewtonsoftJsonSchemaGenerator.FromType<TValue>() 
             : NewtonsoftJsonSchemaGenerator.FromType<TValue>(jsonSchemaGeneratorSettings));
-
+        this.defaultSchemaId = defaultSchemaId;
         _jsonSchemaGeneratorSettings = jsonSchemaGeneratorSettings;
     }
 
@@ -36,13 +37,12 @@ public class CustomSerializer<TValue> : IAsyncSerializer<TValue>
         {
             using (var streamWriter = new StreamWriter(memoryStream, Encoding.UTF8))
             {
-                streamWriter.Write(0);
+                streamWriter.Write((byte)0); // Write magic byte
+                streamWriter.Write(defaultSchemaId);
                 await streamWriter.WriteAsync(jsonText);
                 await streamWriter.FlushAsync();
                 return memoryStream.ToArray();
             }
         }
-
-        //return Encoding.UTF8.GetBytes(jsonText);
     }
 }

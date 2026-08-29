@@ -5,6 +5,7 @@ using DotNet.Testcontainers.Networks;
 using Kafka.Schemas.Shared.Extensions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Kafka.Schemas.Shared.Integration.Tests;
 
@@ -27,18 +28,24 @@ public class KafkaIntegrationTestFixture : IAsyncLifetime
         Environment.SetEnvironmentVariable("kafka__producer__bootstrapservers", "localhost:9092");
         Environment.SetEnvironmentVariable("kafka__consumer__bootstrapservers", "localhost:9092");
         Environment.SetEnvironmentVariable("kafka__consumer__groupid", "env-test-group");
+        Environment.SetEnvironmentVariable("kafka__schemaRegistry__url", "http://localhost:8081");
 
         var config = new ConfigurationBuilder()
             .AddEnvironmentVariables()
             .Build();
 
         var services = new ServiceCollection();
-        services.AddKafkaServices(config);
-
-        Services = services.BuildServiceProvider();
+        services.AddLogging(builder =>
+        {
+            builder.AddConsole();
+        });
+        services
+            .AddKafkaServices(config)
+            .AddMessageProducerWithDefaultSerializer<string, TestMessage>();
 
         SetupContainers();
 
+        Services = services.BuildServiceProvider();
         Producer = Services.GetRequiredService<IProducer<string, string>>();
         Consumer = Services.GetRequiredService<IConsumer<string, string>>();
 
@@ -121,4 +128,10 @@ public class KafkaIntegrationTestFixture : IAsyncLifetime
         await _kafkaContainer.StopAsync();
         await _network.DeleteAsync();
     }
+}
+
+public class TestMessage
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
 }

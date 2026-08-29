@@ -19,8 +19,10 @@ public class MessageProducer<TKey, TValue> : IMessageProducer<TKey, TValue>
     public MessageProducer(ProducerConfig producerConfig, ILogger<MessageProducer<TKey, TValue>> logger)
     {
         _producer = InitializeProducerWithAsyncSerializer(producerConfig, null);
+        _logger = logger;
     }
-    public MessageProducer(ProducerConfig producerConfig, IAsyncSerializer<TValue> serializer, ILogger<MessageProducer<TKey, TValue>> logger)
+
+    public MessageProducer(ProducerConfig producerConfig, IAsyncSerializer<TValue>? serializer, ILogger<MessageProducer<TKey, TValue>> logger)
     {
         _producer = InitializeProducerWithAsyncSerializer(producerConfig, serializer);
         _logger = logger;
