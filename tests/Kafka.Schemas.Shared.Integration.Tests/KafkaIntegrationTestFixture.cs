@@ -1,7 +1,10 @@
-﻿using DotNet.Testcontainers.Builders;
+﻿using Confluent.Kafka;
+using DotNet.Testcontainers.Builders;
 using DotNet.Testcontainers.Containers;
 using DotNet.Testcontainers.Networks;
-using System.Text;
+using Kafka.Schemas.Shared.Extensions;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Kafka.Schemas.Shared.Integration.Tests;
 
@@ -15,34 +18,37 @@ public class KafkaIntegrationTestFixture : IAsyncLifetime
     private readonly INetwork _network;
     private readonly IContainer _kafkaContainer;
     private readonly IContainer _schemaRegistryContainer;
-
-    private const string Topic = "orders";
     private const string KafkaImage = "confluentinc/cp-kafka:7.6.0"; // Use a specific version
     private const string SchemaRegistryImage = "confluentinc/cp-schema-registry:7.6.0"; // Use a specific version
 
+    public IServiceProvider Services { get; private set; }
+    public IProducer<string, string> Producer { get; private set; }
+    public IConsumer<string, string> Consumer { get; private set; }
+    public string TopicName { get; } = "env-test-topic";
     public KafkaIntegrationTestFixture()
     {
         _network = new NetworkBuilder()
             .WithName(Guid.NewGuid().ToString("D"))
             .Build();
 
-        _kafkaContainer = new ContainerBuilder()
+        _kafkaContainer = new ContainerBuilder(KafkaImage)
             .WithName("kafka-test")
-            .WithImage(KafkaImage)
             .WithPortBinding(KafkaPort, true)
-            .WithEnvironment("KAFKA_BROKER_ID", "1")
-            .WithEnvironment("KAFKA_ZOOKEEPER_CONNECT", "zookeeper:2181")
-            .WithEnvironment("KAFKA_LISTENER_SECURITY_PROTOCOL_MAP", "PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT")
-            .WithEnvironment("KAFKA_ADVERTISED_LISTENERS", "PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://kafka:29092")
-            .WithEnvironment("KAFKA_LISTENERS", "PLAINTEXT://0.0.0.0:9092,PLAINTEXT_INTERNAL://0.0.0.0:29092")
-            .WithEnvironment("KAFKA_INTER_BROKER_LISTENER_NAME", "PLAINTEXT_INTERNAL")
-            //WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(KafkaPort))
-            .WithNetwork(_network)// Use the same network as Zookeeper
-            .WithNetworkAliases("kafka") // Set a network alias for Kafka
+            .WithEnvironment("KAFKA_ENABLE_KRAFT", "yes")
+            .WithEnvironment("KAFKA_CFG_PROCESS_ROLES", "broker")
+            .WithEnvironment("KAFKA_CFG_NODE_ID", "1")
+            .WithEnvironment("KAFKA_CFG_CONTROLLER_QUORUM_VOTERS", "1@kafka-test:9093")
+            .WithEnvironment("KAFKA_CFG_LISTENERS", "PLAINTEXT://:9092,CONTROLLER://:9093")
+            .WithEnvironment("KAFKA_CFG_ADVERTISED_LISTENERS", "PLAINTEXT://localhost:9092")
+            .WithEnvironment("KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP", "PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT")
+            .WithEnvironment("ALLOW_PLAINTEXT_LISTENER", "yes")
+            .WithNetwork(_network)
+            .WithNetworkAliases(KafkaContainerAlias)
+            .WithWaitStrategy(Wait.ForUnixContainer().UntilInternalTcpPortIsAvailable(KafkaPort))
             .Build();
 
-        _schemaRegistryContainer = new ContainerBuilder()
-            .WithImage(SchemaRegistryImage)
+
+        _schemaRegistryContainer = new ContainerBuilder(SchemaRegistryImage)
             .WithName("schema-registry-container")
             .WithPortBinding(SchemaRegistryPort, true)
             .WithNetwork(_network)
@@ -51,11 +57,31 @@ public class KafkaIntegrationTestFixture : IAsyncLifetime
             {
                 ["SCHEMA_REGISTRY_HOST_NAME"] = SchemaRegistryAlias,
                 ["SCHEMA_REGISTRY_LISTENERS"] = "http://0.0.0.0:8081",
-                ["SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS"] = "PLAINTEXT://localhost:9092"
+                ["SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS"] = "PLAINTEXT://kafka-test:9092"
             })
             .WithWaitStrategy(Wait.ForUnixContainer().UntilInternalTcpPortIsAvailable(SchemaRegistryPort))
             .DependsOn(_kafkaContainer)
             .Build();
+
+
+        // Set env vars for test
+        Environment.SetEnvironmentVariable("kafka__producer__bootstrapservers", "localhost:9092");
+        Environment.SetEnvironmentVariable("kafka__consumer__bootstrapservers", "localhost:9092");
+        Environment.SetEnvironmentVariable("kafka__consumer__groupid", "env-test-group");
+
+        var config = new ConfigurationBuilder()
+            .AddEnvironmentVariables()
+            .Build();
+        
+        var services = new ServiceCollection();
+        services.AddKafkaServices(config);
+
+        Services = services.BuildServiceProvider();
+
+        Producer = Services.GetRequiredService<IProducer<string, string>>();
+        Consumer = Services.GetRequiredService<IConsumer<string, string>>();
+
+        Consumer.Subscribe(TopicName);
     }
 
     public async Task InitializeAsync()
