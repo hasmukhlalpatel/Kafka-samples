@@ -88,6 +88,12 @@ public class MessageProducer<TKey, TValue> : IMessageProducer<TKey, TValue>
 
     public async Task ProduceAsync(string topic, Message<TKey, TValue> message, CancellationToken cancellationToken = default)
     {
+        using var scope = _logger.BeginScope(new Dictionary<string, object>
+        {
+            ["Topic"] = topic,
+            [LogicalCallContext.Constants.XCorrelationId] = ApplicationContextScope.Current.CorrelationId
+        });
+
         var activity = activitySource.StartProducerActivity(topic);
         try
         {

@@ -68,7 +68,7 @@ public class MessageConsumer<TKey, TValue> : IMessageConsumer<TKey, TValue>
         ArgumentException.ThrowIfNullOrEmpty(topic, nameof(topic));
         ArgumentException.ThrowIfNullOrEmpty(groupId, nameof(groupId));
 
-        _logger.BeginScope(new Dictionary<string, object>
+        using var scope = _logger.BeginScope(new Dictionary<string, object>
         {
             ["Topic"] = topic,
             ["GroupId"] = groupId

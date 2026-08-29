@@ -96,6 +96,7 @@ public static class KafkaHostingExtensions
         });
         return services;
     }
+
     public static IServiceCollection AddMessageProducer<TKey, TValue>(this IServiceCollection services,
         IAsyncSerializer<TValue>? serializer = null)
         where TValue : class

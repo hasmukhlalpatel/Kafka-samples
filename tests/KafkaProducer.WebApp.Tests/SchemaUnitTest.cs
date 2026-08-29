@@ -16,9 +16,14 @@ public class SchemaUnitTest
             var id = await schemaRegistry.RegisterSchemaAsync(topicName, SchemaGenerator.GenerateSchemaJson<TestMessage>());
         }
 
-        var logger= new LoggerFactory().CreateLogger<MessageProducer<Confluent.Kafka.Null, TestMessage>>();
+        var logger= new LoggerFactory().CreateLogger<MessageProducer<Null, TestMessage>>();
 
-        using (var producer = new MessageProducer<Confluent.Kafka.Null, TestMessage>(logger))
+        var producerConfig = new ProducerConfig
+        {
+            BootstrapServers = "localhost:9092"
+        };
+
+        using (var producer = new MessageProducer<Null, TestMessage>(producerConfig, logger))
         {
             var customer = new TestCustomer
             {
@@ -29,7 +34,7 @@ public class SchemaUnitTest
             };
             var customerEvent = new CustomerCreateEvent { Customer = customer };
             var customerMessage = new TestMessage { CustomerEventData = customerEvent };
-            var message = new Message<Confluent.Kafka.Null, TestMessage>
+            var message = new Message<Null, TestMessage>
             {
                 Value = customerMessage
             };
@@ -46,7 +51,7 @@ public class SchemaUnitTest
             };
             var orderEvent = new OrderCreateEvent { Customer = customer, Order = order };
             var orderMessage = new TestMessage { OrderEventData = orderEvent };
-            message = new Message<Confluent.Kafka.Null, TestMessage>
+            message = new Message<Null, TestMessage>
             {
                 Value = orderMessage
             };
