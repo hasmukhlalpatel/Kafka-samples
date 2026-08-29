@@ -43,6 +43,7 @@ public class KafkaIntegrationTestFixture : IAsyncLifetime
             builder.AddConsole();
         });
 
+        //TODO: needto fix the AddKafkaServices method to accept IConfiguration and bind the config sections properly.
         var consumerConfig = new ConsumerConfig
         {
             BootstrapServers = "localhost:9092",
