@@ -51,11 +51,9 @@ public class MessageConsumer<TKey, TValue> : IMessageConsumer<TKey, TValue>
         _deserializer = new JsonDeserializer<TValue>(schemaRegistryClient, jsonSerializerConfig).AsSyncOverAsync();
     }
 
-    private IConsumer<TKey, TValue> BuildConsumer()
+    private IConsumer<TKey, byte[]> BuildConsumer()
     {
-        return new ConsumerBuilder<TKey, TValue>(_consumerConfig)
-            .SetValueDeserializer(_deserializer)
-            .Build();
+        return new ConsumerBuilder<TKey, byte[]>(_consumerConfig).Build();
     }
 
     public void StartConsuming(string topic, Func<TKey, TValue, ConsumeStatus> consumerFactory, CancellationToken cancellationToken = default)
@@ -85,9 +83,11 @@ public class MessageConsumer<TKey, TValue> : IMessageConsumer<TKey, TValue>
                     try
                     {
                         var consumeResult = consumer.Consume(cancellationToken);
-                        _logger.LogInformation($"Processing Consumed message '{consumeResult.Message.Value}' at: '{consumeResult.TopicPartitionOffset}'.");
-                        var consumeStatus = consumerFactory(consumeResult.Message.Key, consumeResult.Message.Value);
-                        _logger.LogInformation($"Consumed message '{consumeResult.Message.Value}' at: '{consumeResult.TopicPartitionOffset}'.");
+                        var deserializedValue = _deserializer.Deserialize(consumeResult.Message.Value, false, new SerializationContext(MessageComponentType.Value, consumeResult.Topic));
+
+                        _logger.LogInformation($"Processing Consumed message at: '{consumeResult.TopicPartitionOffset}'.");
+                        var consumeStatus = consumerFactory(consumeResult.Message.Key, deserializedValue);
+                        _logger.LogInformation($"Consumed message at: '{consumeResult.TopicPartitionOffset}'.");
                     }
                     catch (ConsumeException e)
                     {

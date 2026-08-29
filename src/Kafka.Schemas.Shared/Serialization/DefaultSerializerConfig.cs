@@ -39,6 +39,7 @@ namespace Kafka.Schemas.Shared.Serialization
             }
             return false;
         }
+
         private static readonly Dictionary<Type, object> defaultSerializers = new Dictionary<Type, object>
         {
             {
@@ -68,6 +69,54 @@ namespace Kafka.Schemas.Shared.Serialization
             {
                 typeof(byte[]),
                 Serializers.ByteArray
+            }
+        };
+
+        public static object GetDefaultDeserializer(Type type)
+        {
+            if (defaultDeserializers.TryGetValue(type, out var deserializer))
+            {
+                return deserializer;
+            }
+            throw new NotSupportedException($"No default deserializer found for type {type.FullName}");
+        }
+        public static bool TryGetDefaultDeserializer(Type type, out object deserializer)
+        {
+            if (defaultDeserializers.TryGetValue(type, out deserializer))
+            {
+                return true;
+            }
+            return false;
+        }
+        private static readonly Dictionary<Type, object> defaultDeserializers = new Dictionary<Type, object>
+        {
+            {
+                typeof(Null),
+                Deserializers.Null
+            },
+            {
+                typeof(int),
+                Deserializers.Int32
+            },
+            {
+                typeof(long),
+                Deserializers.Int64
+            },
+            {
+                typeof(string),
+                Deserializers.Utf8
+            },
+            {
+                typeof(float),
+                Deserializers.Single
+            },
+            {
+                typeof(double),
+                Deserializers.Double
+            },
+            {
+                typeof(byte[]),
+                Deserializers.ByteArray
             }
         };
     }
