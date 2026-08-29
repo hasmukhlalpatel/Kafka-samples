@@ -23,6 +23,12 @@ public class MessageConsumer<TKey, TValue> : IMessageConsumer<TKey, TValue>
         Validate = false, // Set this back to true for validation
     };
 
+    public MessageConsumer(ConsumerConfig consumerConfig, IDeserializer<TValue> deserializer, ILogger<MessageConsumer<TKey, TValue>> logger)
+    {
+        _consumerConfig = consumerConfig;
+        _logger = logger;
+        _deserializer = deserializer;
+    }
     public MessageConsumer(ConsumerConfig consumerConfig, ILogger<MessageConsumer<TKey, TValue>> logger)
     {
         _consumerConfig = consumerConfig;
@@ -30,12 +36,6 @@ public class MessageConsumer<TKey, TValue> : IMessageConsumer<TKey, TValue>
         _deserializer = new CustomDeserializer<TValue>();
     }
 
-    public MessageConsumer(ConsumerConfig consumerConfig, IDeserializer<TValue> deserializer, ILogger<MessageConsumer<TKey, TValue>> logger)
-    {
-        _consumerConfig = consumerConfig;
-        _logger = logger;
-        _deserializer = deserializer;
-    }
 
     public MessageConsumer(ConsumerConfig consumerConfig,
         SchemaRegistryConfig config,

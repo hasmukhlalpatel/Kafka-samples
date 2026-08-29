@@ -28,7 +28,7 @@ public class CustomSerializer<TValue> : IAsyncSerializer<TValue>
     {
         if (data == null)
         {
-            return null;
+            return default!;
         }
 
         string jsonText = JsonConvert.SerializeObject(data, jsonSchemaGeneratorSettingsSerializerSettings);

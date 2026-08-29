@@ -10,6 +10,8 @@
     <PackageReference Include="Confluent.SchemaRegistry" />
     <PackageReference Include="Confluent.SchemaRegistry.Serdes.Json" />
     <PackageReference Include="Confluent.SchemaRegistry.Serdes.Avro" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" />
   </ItemGroup>
 	<ItemGroup>
 		<InternalsVisibleTo Include="KafkaProducer.WebApp.Tests" />

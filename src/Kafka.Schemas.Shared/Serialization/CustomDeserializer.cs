@@ -1,44 +1,26 @@
 ﻿using Confluent.Kafka;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using NJsonSchema;
-using NJsonSchema.NewtonsoftJson.Generation;
 using System.Text;
 
 namespace Kafka.Schemas.Shared.Serialization;
 
 public class CustomDeserializer<TValue> : IDeserializer<TValue>
 {
-    private readonly NewtonsoftJsonSchemaGeneratorSettings? _jsonSchemaGeneratorSettings;
-    private JsonSerializerSettings? jsonSchemaGeneratorSettingsSerializerSettings => _jsonSchemaGeneratorSettings?.SerializerSettings;
-    private readonly JsonSchema _schema;
-    public string schemaText => _schema.ToJson();
-    public JsonSchema schema => _schema;
-    public CustomDeserializer(NewtonsoftJsonSchemaGeneratorSettings? jsonSchemaGeneratorSettings = null)
-    {
-        _schema = ((jsonSchemaGeneratorSettings == null)
-            ? NewtonsoftJsonSchemaGenerator.FromType<TValue>()
-            : NewtonsoftJsonSchemaGenerator.FromType<TValue>(jsonSchemaGeneratorSettings));
-        _jsonSchemaGeneratorSettings = jsonSchemaGeneratorSettings;
-    }
-
     public TValue Deserialize(ReadOnlySpan<byte> data, bool isNull, SerializationContext context)
     {
-        if (isNull || data.IsEmpty)
+        if (isNull || data.IsEmpty || data.Length == 0)
         {
             return default;
         }
 
-        using (var memoryStream = new MemoryStream(data.ToArray()))
+        var jsonPosition = 0;
+        if (data[0] == 0) // Check for magic byte
         {
-            using (var streamReader = new StreamReader(memoryStream, Encoding.UTF8))
-            {
-                // Skip the first byte (magic byte)
-                var magicBytes = new char[4];
-                var magicByte = streamReader.Read(magicBytes, 0, 4);
-                string jsonText = streamReader.ReadToEnd();
-                return JsonConvert.DeserializeObject<TValue>(jsonText, jsonSchemaGeneratorSettingsSerializerSettings);
-            }
+            var schemaIdBytes = data.Slice(1, 4).ToArray();
+            jsonPosition = 5;
         }
+        var jsonText = Encoding.UTF8.GetString(data.Slice(jsonPosition).ToArray());
+
+        return JsonConvert.DeserializeObject<TValue>(jsonText);
     }
 }

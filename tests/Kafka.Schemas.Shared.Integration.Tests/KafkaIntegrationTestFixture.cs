@@ -1,17 +1,11 @@
-﻿using Confluent.Kafka;
-using Confluent.SchemaRegistry;
-using Confluent.SchemaRegistry.Serdes;
-using DotNet.Testcontainers.Builders;
+﻿using DotNet.Testcontainers.Builders;
 using DotNet.Testcontainers.Containers;
 using DotNet.Testcontainers.Networks;
-using NJsonSchema;
-using Newtonsoft.Json;
 using System.Text;
-using Xunit;
 
-namespace KafkaProducer.WebApp.Tests;
+namespace Kafka.Schemas.Shared.Integration.Tests;
 
-public class KafkaSchemaRegistryTest : IAsyncLifetime
+public class KafkaIntegrationTestFixture : IAsyncLifetime
 {
     private const string KafkaContainerAlias = "kafka";
     private const string SchemaRegistryAlias = "schema-registry";
@@ -26,7 +20,7 @@ public class KafkaSchemaRegistryTest : IAsyncLifetime
     private const string KafkaImage = "confluentinc/cp-kafka:7.6.0"; // Use a specific version
     private const string SchemaRegistryImage = "confluentinc/cp-schema-registry:7.6.0"; // Use a specific version
 
-    public KafkaSchemaRegistryTest()
+    public KafkaIntegrationTestFixture()
     {
         _network = new NetworkBuilder()
             .WithName(Guid.NewGuid().ToString("D"))
@@ -77,81 +71,5 @@ public class KafkaSchemaRegistryTest : IAsyncLifetime
         await _schemaRegistryContainer.StopAsync();
         await _kafkaContainer.StopAsync();
         await _network.DeleteAsync();
-    }
-
-    public class OrderMessage
-    {
-        [JsonProperty("Order")]
-        public object Order { get; set; }
-    }
-
-    public class StandardOrderMessage
-    {
-        [JsonProperty("type")]
-        public string Type => "Standard";
-
-        [JsonProperty("standardField")]
-        public string StandardField { get; set; }
-    }
-
-    [Fact]
-    public async Task CanProduceKafkaMessageWithJsonSchema()
-    {
-        string schemaRegistryUrl = "http://localhost:8081";
-
-        // Generate JSON Schema
-        var schema = JsonSchema.FromType<OrderMessage>();
-        schema.Properties["Order"].AnyOf.Add(JsonSchema.FromType<StandardOrderMessage>());
-
-        string schemaJson = schema.ToJson();
-
-        // Register schema manually
-        int schemaId;
-        using (var client = new HttpClient())
-        {
-            var payload = new
-            {
-                schemaType = "JSON",
-                schema = schemaJson
-            };
-            var content = new StringContent(JsonConvert.SerializeObject(payload), Encoding.UTF8, "application/vnd.schemaregistry.v1+json");
-            var response = await client.PostAsync($"{schemaRegistryUrl}/subjects/{Topic}-value/versions", content);
-            var resultString = await response.Content.ReadAsStringAsync();
-            var result = JsonConvert.DeserializeObject<Dictionary<string, int>>(resultString);
-            schemaId = result["id"];
-            Console.WriteLine($"✅ Registered schema ID: {schemaId}");
-        }
-
-        // Send message
-        var producerConfig = new ProducerConfig
-        {
-            BootstrapServers = "localhost:9092"
-        };
-        var registryConfig = new SchemaRegistryConfig
-        {
-            Url = schemaRegistryUrl
-        };
-        var serializerConfig = new JsonSerializerConfig
-        {
-            AutoRegisterSchemas = false
-        };
-
-        using var schemaRegistry = new CachedSchemaRegistryClient(registryConfig);
-        var producer = new ProducerBuilder<string, OrderMessage>(producerConfig)
-            .SetValueSerializer(new JsonSerializer<OrderMessage>(schemaRegistry, serializerConfig))
-            .Build();
-
-        var message = new OrderMessage
-        {
-            Order = new StandardOrderMessage { StandardField = "Test-123" }
-        };
-
-        var result2 = await producer.ProduceAsync(Topic, new Message<string, OrderMessage>
-        {
-            Key = Guid.NewGuid().ToString(),
-            Value = message
-        });
-
-        Console.WriteLine($"✅ Message sent to: {result2.TopicPartitionOffset}");
     }
 }

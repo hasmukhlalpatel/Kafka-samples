@@ -14,14 +14,7 @@ public class MessageProducer<TKey, TValue> : IMessageProducer<TKey, TValue>
 
     private readonly CachedSchemaRegistryClient? schemaRegistryClient = null;
 
-    private readonly JsonSerializerConfig _jsonSerializerConfig = new JsonSerializerConfig
-    {
-        AutoRegisterSchemas = false, // Set this back to true for auto-registration
-        UseLatestVersion = true,
-        LatestCompatibilityStrict = true,
-        Validate = false, // Set this back to true for validation
-    };
-    private readonly IAsyncSerializer<TValue> _serializer;
+
     private readonly ILogger<MessageProducer<TKey, TValue>> _logger;
 
     internal MessageProducer(ILogger<MessageProducer<TKey, TValue>> logger)
@@ -34,7 +27,7 @@ public class MessageProducer<TKey, TValue> : IMessageProducer<TKey, TValue>
         };
 
         var schemaRegistry = new CachedSchemaRegistryClient(config);
-        var jsonSerializer = new JsonSerializer<TValue>(schemaRegistry, _jsonSerializerConfig);
+        var jsonSerializer = new JsonSerializer<TValue>(schemaRegistry, DefaultSerializerConfig.SerializerConfig);
 
         _producer = InitializeProducer(producerConfig, jsonSerializer);
         _logger = logger;
@@ -45,20 +38,19 @@ public class MessageProducer<TKey, TValue> : IMessageProducer<TKey, TValue>
         ILogger<MessageProducer<TKey, TValue>> logger,
         JsonSerializerConfig? jsonSerializerConfig = null)
     {
-        jsonSerializerConfig ??= _jsonSerializerConfig;
+        jsonSerializerConfig ??= DefaultSerializerConfig.SerializerConfig;
         ArgumentNullException.ThrowIfNull(config, nameof(config));
         _logger = logger;
 
         schemaRegistryClient = new CachedSchemaRegistryClient(config);
-        _serializer = new JsonSerializer<TValue>(schemaRegistryClient, jsonSerializerConfig);
+        var serializer = new JsonSerializer<TValue>(schemaRegistryClient, jsonSerializerConfig);
 
-        _producer = InitializeProducer(producerConfig, _serializer);
+        _producer = InitializeProducer(producerConfig, serializer);
     }
 
     public MessageProducer(ProducerConfig producerConfig, IAsyncSerializer<TValue> serializer, ILogger<MessageProducer<TKey, TValue>> logger)
     {
         _producer = InitializeProducer(producerConfig, serializer);
-        _serializer = serializer;
         _logger = logger;
     }
 
@@ -70,8 +62,8 @@ public class MessageProducer<TKey, TValue> : IMessageProducer<TKey, TValue>
     /// <param name="logger"></param>
     public MessageProducer(ProducerConfig producerConfig, ILogger<MessageProducer<TKey, TValue>> logger)
     {
-        _serializer = new CustomSerializer<TValue>();
-        _producer = InitializeProducer(producerConfig, _serializer);
+        var serializer = new CustomSerializer<TValue>();
+        _producer = InitializeProducer(producerConfig, serializer);
     }
 
     private IProducer<TKey, TValue> InitializeProducer(ProducerConfig producerConfig, IAsyncSerializer<TValue> serializer)
