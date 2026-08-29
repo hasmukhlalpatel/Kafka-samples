@@ -28,7 +28,9 @@ public class KafkaIntegrationTestFixture : IAsyncLifetime
         // Set env vars for test
         Environment.SetEnvironmentVariable("kafka__producer__bootstrapservers", "localhost:9092");
         Environment.SetEnvironmentVariable("kafka__consumer__bootstrapservers", "localhost:9092");
-        Environment.SetEnvironmentVariable("kafka__consumer__groupid", "env-test-group");
+        Environment.SetEnvironmentVariable("kafka__consumer__groupid", "env-test-group-app");
+        Environment.SetEnvironmentVariable("kafka__consumer__autoOffsetReset", "1");
+        Environment.SetEnvironmentVariable("kafka__consumer__enableAutoCommit", "false");
         Environment.SetEnvironmentVariable("kafka__schemaRegistry__url", "http://localhost:8081");
 
         var config = new ConfigurationBuilder()
@@ -40,8 +42,26 @@ public class KafkaIntegrationTestFixture : IAsyncLifetime
         {
             builder.AddConsole();
         });
+
+        var consumerConfig = new ConsumerConfig
+        {
+            BootstrapServers = "localhost:9092",
+            GroupId = $"test-group-{Guid.NewGuid()}",
+            AutoOffsetReset = AutoOffsetReset.Earliest,
+            EnableAutoCommit = false
+        };
+        var producerConfig = new ProducerConfig
+        {
+            BootstrapServers = "localhost:9092"
+        };
+        var schemaRegistryConfig = new Confluent.SchemaRegistry.SchemaRegistryConfig
+        {
+            Url = "http://localhost:8081"
+        };
+
         services
-            .AddKafkaServices(config)
+            //.AddKafkaServices(config, consumerConfig, producerConfig)
+            .AddKafka(producerConfig, consumerConfig, schemaRegistryConfig)
             .AddMessageProducerWithDefaultSerializer<string, TestMessage>()
             .AddMessageConsumerWithDefaultSerializer<string, TestMessage>();
 

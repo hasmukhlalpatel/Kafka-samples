@@ -112,6 +112,10 @@ public class MessageConsumer<TKey, TValue> : IMessageConsumer<TKey, TValue>
             {
                 _logger.LogInformation("Consumer operation canceled.");
             }
+            catch (Exception ex) 
+            {
+                _logger.LogError(ex, "Unexpected error occurred.");
+            }
             finally
             {
                 consumer.Close();

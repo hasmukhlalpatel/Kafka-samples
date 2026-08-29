@@ -48,7 +48,7 @@ public static class KafkaHostingExtensions
 
         return AddKafkaServices(services, () => producerConfig,() => consumerConfig,() => schemaRegistryConfig);
     }
-    public static IServiceCollection AddKafka( this IServiceCollection services,
+    public static IServiceCollection AddKafka(this IServiceCollection services,
         ProducerConfig producerConfig,
         ConsumerConfig consumerConfig,
         SchemaRegistryConfig schemaRegistryConfig)
