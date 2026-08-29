@@ -6,6 +6,7 @@ using Kafka.Schemas.Shared.Extensions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using System.Diagnostics;
 
 namespace Kafka.Schemas.Shared.Integration.Tests;
 
@@ -42,8 +43,6 @@ public class KafkaIntegrationTestFixture : IAsyncLifetime
         services
             .AddKafkaServices(config)
             .AddMessageProducerWithDefaultSerializer<string, TestMessage>();
-
-        SetupContainers();
 
         Services = services.BuildServiceProvider();
         Producer = Services.GetRequiredService<IProducer<string, string>>();
@@ -116,6 +115,17 @@ public class KafkaIntegrationTestFixture : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
+        //For testing purposes, we can add an ActivityListener to capture all activities and ensure that the tracing is working as expected.
+        ActivitySource.AddActivityListener(new ActivityListener
+        {
+            ShouldListenTo = _ => true,
+            Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
+            ActivityStarted = _ => { },
+            ActivityStopped = _ => { }
+        });
+
+        SetupContainers();
+
         await _network.CreateAsync();
         await _kafkaContainer.StartAsync();
         await Task.Delay(5000); // Let Kafka fully settle

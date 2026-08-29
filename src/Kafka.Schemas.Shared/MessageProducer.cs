@@ -20,18 +20,18 @@ public class MessageProducer<TKey, TValue> : IMessageProducer<TKey, TValue>
 
     public MessageProducer(ProducerConfig producerConfig, ILogger<MessageProducer<TKey, TValue>> logger)
     {
-        _producer = InitializeProducerWithAsyncSerializer(producerConfig, null);
+        _producer = InitializeProducer(producerConfig, null, null);
         _logger = logger;
     }
 
     public MessageProducer(ProducerConfig producerConfig, IAsyncSerializer<TValue>? serializer, ILogger<MessageProducer<TKey, TValue>> logger)
     {
-        _producer = InitializeProducerWithAsyncSerializer(producerConfig, serializer);
+        _producer = InitializeProducer(producerConfig, serializer, null);
         _logger = logger;
     }
     public MessageProducer(ProducerConfig producerConfig, ISerializer<TValue> serializer, ILogger<MessageProducer<TKey, TValue>> logger)
     {
-        _producer = InitializeProducerWithSerializer(producerConfig, serializer);
+        _producer = InitializeProducer(producerConfig, null, serializer);
         _logger = logger;
     }
 
@@ -54,37 +54,32 @@ public class MessageProducer<TKey, TValue> : IMessageProducer<TKey, TValue>
         schemaRegistryClient = new CachedSchemaRegistryClient(config);
         var serializer = new JsonSerializer<TValue>(schemaRegistryClient, jsonSerializerConfig);
 
-        _producer = InitializeProducerWithAsyncSerializer(producerConfig, serializer);
+        _producer = InitializeProducer(producerConfig, serializer, null);
     }
 
-    private IProducer<TKey, TValue> InitializeProducerWithAsyncSerializer(ProducerConfig producerConfig, IAsyncSerializer<TValue>? serializer)
+    private IProducer<TKey, TValue> InitializeProducer(ProducerConfig producerConfig,
+        IAsyncSerializer<TValue>? asyncSerializer,
+        ISerializer<TValue>? serializer)
     {
         if (_producer == null)
         {
-            if(serializer == null && !DefaultSerializerConfig.TryGetDefaultSerializer(typeof(TValue), out _))
+            if (serializer == null && asyncSerializer == null && !DefaultSerializerConfig.TryGetDefaultSerializer(typeof(TValue), out _))
             {
                 throw new ArgumentNullException(nameof(serializer));
             }
 
-            return new ProducerBuilder<TKey, TValue>(producerConfig)
-                .SetValueSerializer(serializer)
-                    .Build();
-        }
-        return _producer;
-    }
+            var builder = new ProducerBuilder<TKey, TValue>(producerConfig);
 
-    private IProducer<TKey, TValue> InitializeProducerWithSerializer(ProducerConfig producerConfig, ISerializer<TValue>? serializer)
-    {
-        if (_producer == null)
-        {
-            if (serializer == null && !DefaultSerializerConfig.TryGetDefaultSerializer(typeof(TValue), out _))
+            if (asyncSerializer != null)
             {
-                throw new ArgumentNullException(nameof(serializer));
+                builder.SetValueSerializer(asyncSerializer);
+            }
+            else if (serializer != null)
+            {
+                builder.SetValueSerializer(serializer);
             }
 
-            return new ProducerBuilder<TKey, TValue>(producerConfig)
-                .SetValueSerializer(serializer)
-                    .Build();
+            return builder.Build();
         }
         return _producer;
     }

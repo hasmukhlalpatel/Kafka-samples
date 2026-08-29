@@ -42,6 +42,7 @@ public class MessageConsumer<TKey, TValue> : IMessageConsumer<TKey, TValue>
         ILogger<MessageConsumer<TKey, TValue>> logger,
         JsonSerializerConfig? jsonSerializerConfig = null)
     {
+        _consumerConfig = consumerConfig;
         jsonSerializerConfig ??= _jsonSerializerConfig;
         ArgumentNullException.ThrowIfNull(config, nameof(config));
         _logger = logger;
