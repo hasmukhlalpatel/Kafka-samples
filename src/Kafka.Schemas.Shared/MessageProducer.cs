@@ -14,25 +14,30 @@ public class MessageProducer<TKey, TValue> : IMessageProducer<TKey, TValue>
 
     private readonly CachedSchemaRegistryClient? schemaRegistryClient = null;
 
-
     private readonly ILogger<MessageProducer<TKey, TValue>> _logger;
 
-    internal MessageProducer(ILogger<MessageProducer<TKey, TValue>> logger)
+    public MessageProducer(ProducerConfig producerConfig, ILogger<MessageProducer<TKey, TValue>> logger)
     {
-        var producerConfig = new ProducerConfig { BootstrapServers = KafkaConfig.Default.BootstrapServers };
-
-        var config = new SchemaRegistryConfig
-        {
-            Url = KafkaConfig.Default.SchemaRegistryUrl
-        };
-
-        var schemaRegistry = new CachedSchemaRegistryClient(config);
-        var jsonSerializer = new JsonSerializer<TValue>(schemaRegistry, DefaultSerializerConfig.SerializerConfig);
-
-        _producer = InitializeProducer(producerConfig, jsonSerializer);
+        _producer = InitializeProducerWithAsyncSerializer(producerConfig, null);
+    }
+    public MessageProducer(ProducerConfig producerConfig, IAsyncSerializer<TValue> serializer, ILogger<MessageProducer<TKey, TValue>> logger)
+    {
+        _producer = InitializeProducerWithAsyncSerializer(producerConfig, serializer);
+        _logger = logger;
+    }
+    public MessageProducer(ProducerConfig producerConfig, ISerializer<TValue> serializer, ILogger<MessageProducer<TKey, TValue>> logger)
+    {
+        _producer = InitializeProducerWithSerializer(producerConfig, serializer);
         _logger = logger;
     }
 
+    /// <summary>
+    /// With schema registry client and json serializer
+    /// </summary>
+    /// <param name="producerConfig"></param>
+    /// <param name="config"></param>
+    /// <param name="logger"></param>
+    /// <param name="jsonSerializerConfig"></param>
     public MessageProducer(ProducerConfig producerConfig,
         SchemaRegistryConfig config,
         ILogger<MessageProducer<TKey, TValue>> logger,
@@ -45,32 +50,33 @@ public class MessageProducer<TKey, TValue> : IMessageProducer<TKey, TValue>
         schemaRegistryClient = new CachedSchemaRegistryClient(config);
         var serializer = new JsonSerializer<TValue>(schemaRegistryClient, jsonSerializerConfig);
 
-        _producer = InitializeProducer(producerConfig, serializer);
+        _producer = InitializeProducerWithAsyncSerializer(producerConfig, serializer);
     }
 
-    public MessageProducer(ProducerConfig producerConfig, IAsyncSerializer<TValue> serializer, ILogger<MessageProducer<TKey, TValue>> logger)
-    {
-        _producer = InitializeProducer(producerConfig, serializer);
-        _logger = logger;
-    }
-
-    /// <summary>
-    /// Initializes a new instance of the MessageProducer class with the specified ProducerConfig.
-    /// No schema registry client is used, and a custom serializer is created for TValue.
-    /// </summary>
-    /// <param name="producerConfig"></param>
-    /// <param name="logger"></param>
-    public MessageProducer(ProducerConfig producerConfig, ILogger<MessageProducer<TKey, TValue>> logger)
-    {
-        var serializer = new CustomSerializer<TValue>();
-        _producer = InitializeProducer(producerConfig, serializer);
-    }
-
-    private IProducer<TKey, TValue> InitializeProducer(ProducerConfig producerConfig, IAsyncSerializer<TValue> serializer)
+    private IProducer<TKey, TValue> InitializeProducerWithAsyncSerializer(ProducerConfig producerConfig, IAsyncSerializer<TValue>? serializer)
     {
         if (_producer == null)
         {
-            ArgumentNullException.ThrowIfNull(serializer, nameof(serializer));
+            if(serializer == null && !DefaultSerializerConfig.TryGetDefaultSerializer(typeof(TValue), out _))
+            {
+                throw new ArgumentNullException(nameof(serializer));
+            }
+
+            return new ProducerBuilder<TKey, TValue>(producerConfig)
+                .SetValueSerializer(serializer)
+                    .Build();
+        }
+        return _producer;
+    }
+
+    private IProducer<TKey, TValue> InitializeProducerWithSerializer(ProducerConfig producerConfig, ISerializer<TValue>? serializer)
+    {
+        if (_producer == null)
+        {
+            if (serializer == null && !DefaultSerializerConfig.TryGetDefaultSerializer(typeof(TValue), out _))
+            {
+                throw new ArgumentNullException(nameof(serializer));
+            }
 
             return new ProducerBuilder<TKey, TValue>(producerConfig)
                 .SetValueSerializer(serializer)

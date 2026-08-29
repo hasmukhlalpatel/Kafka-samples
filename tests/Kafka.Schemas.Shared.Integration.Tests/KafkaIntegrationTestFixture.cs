@@ -13,9 +13,9 @@ public class KafkaIntegrationTestFixture : IAsyncLifetime
     private const int KafkaPort = 9092;
     private const int SchemaRegistryPort = 8081;
 
-    private readonly INetwork _network;
-    private readonly IContainer _kafkaContainer;
-    private readonly IContainer _schemaRegistryContainer;
+    private INetwork _network;
+    private IContainer _kafkaContainer;
+    private IContainer _schemaRegistryContainer;
 
     public IServiceProvider Services { get; private set; }
     public IProducer<string, string> Producer { get; private set; }
@@ -23,12 +23,6 @@ public class KafkaIntegrationTestFixture : IAsyncLifetime
     public string TopicName { get; } = "env-test-topic";
     public KafkaIntegrationTestFixture()
     {
-        _network = new NetworkBuilder()
-            .WithName(Guid.NewGuid().ToString("D"))
-            .Build();
-        _kafkaContainer = BuildKafkaContainer();
-        _schemaRegistryContainer = BuildSchemaRegistryContainer();
-
         // Set env vars for test
         Environment.SetEnvironmentVariable("kafka__producer__bootstrapservers", "localhost:9092");
         Environment.SetEnvironmentVariable("kafka__consumer__bootstrapservers", "localhost:9092");
@@ -43,10 +37,21 @@ public class KafkaIntegrationTestFixture : IAsyncLifetime
 
         Services = services.BuildServiceProvider();
 
+        SetupContainers();
+
         Producer = Services.GetRequiredService<IProducer<string, string>>();
         Consumer = Services.GetRequiredService<IConsumer<string, string>>();
 
         Consumer.Subscribe(TopicName);
+    }
+
+    private void SetupContainers()
+    {
+        _network = new NetworkBuilder()
+            .WithName(Guid.NewGuid().ToString("D"))
+            .Build();
+        _kafkaContainer = BuildKafkaContainer();
+        _schemaRegistryContainer = BuildSchemaRegistryContainer();
     }
 
     private IContainer BuildSchemaRegistryContainer()
