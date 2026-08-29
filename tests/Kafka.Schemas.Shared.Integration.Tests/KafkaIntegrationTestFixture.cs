@@ -42,7 +42,8 @@ public class KafkaIntegrationTestFixture : IAsyncLifetime
         });
         services
             .AddKafkaServices(config)
-            .AddMessageProducerWithDefaultSerializer<string, TestMessage>();
+            .AddMessageProducerWithDefaultSerializer<string, TestMessage>()
+            .AddMessageConsumerWithDefaultSerializer<string, TestMessage>();
 
         Services = services.BuildServiceProvider();
         Producer = Services.GetRequiredService<IProducer<string, string>>();

@@ -1,4 +1,5 @@
 ﻿using Confluent.Kafka;
+using Confluent.Kafka.SyncOverAsync;
 using Confluent.SchemaRegistry;
 using Confluent.SchemaRegistry.Serdes;
 using Kafka.Schemas.Shared.Extensions;
@@ -20,18 +21,19 @@ public class MessageProducer<TKey, TValue> : IMessageProducer<TKey, TValue>
 
     public MessageProducer(ProducerConfig producerConfig, ILogger<MessageProducer<TKey, TValue>> logger)
     {
-        _producer = InitializeProducer(producerConfig, null, null);
+        _producer = InitializeProducer(producerConfig, null);
         _logger = logger;
     }
 
-    public MessageProducer(ProducerConfig producerConfig, IAsyncSerializer<TValue>? serializer, ILogger<MessageProducer<TKey, TValue>> logger)
+    public MessageProducer(ProducerConfig producerConfig, IAsyncSerializer<TValue>? asyncSerializer, ILogger<MessageProducer<TKey, TValue>> logger)
     {
-        _producer = InitializeProducer(producerConfig, serializer, null);
+        var serializer = asyncSerializer != null ? asyncSerializer.AsSyncOverAsync() : null;
+        _producer = InitializeProducer(producerConfig, serializer);
         _logger = logger;
     }
     public MessageProducer(ProducerConfig producerConfig, ISerializer<TValue> serializer, ILogger<MessageProducer<TKey, TValue>> logger)
     {
-        _producer = InitializeProducer(producerConfig, null, serializer);
+        _producer = InitializeProducer(producerConfig, serializer);
         _logger = logger;
     }
 
@@ -52,29 +54,23 @@ public class MessageProducer<TKey, TValue> : IMessageProducer<TKey, TValue>
         _logger = logger;
 
         schemaRegistryClient = new CachedSchemaRegistryClient(config);
-        var serializer = new JsonSerializer<TValue>(schemaRegistryClient, jsonSerializerConfig);
+        var serializer = new JsonSerializer<TValue>(schemaRegistryClient, jsonSerializerConfig).AsSyncOverAsync();
 
-        _producer = InitializeProducer(producerConfig, serializer, null);
+        _producer = InitializeProducer(producerConfig, serializer);
     }
 
-    private IProducer<TKey, TValue> InitializeProducer(ProducerConfig producerConfig,
-        IAsyncSerializer<TValue>? asyncSerializer,
-        ISerializer<TValue>? serializer)
+    private IProducer<TKey, TValue> InitializeProducer(ProducerConfig producerConfig, ISerializer<TValue>? serializer)
     {
         if (_producer == null)
         {
-            if (serializer == null && asyncSerializer == null && !DefaultSerializerConfig.TryGetDefaultSerializer(typeof(TValue), out _))
+            if (serializer == null && !DefaultSerializerConfig.TryGetDefaultSerializer(typeof(TValue), out _))
             {
                 throw new ArgumentNullException(nameof(serializer));
             }
 
             var builder = new ProducerBuilder<TKey, TValue>(producerConfig);
 
-            if (asyncSerializer != null)
-            {
-                builder.SetValueSerializer(asyncSerializer);
-            }
-            else if (serializer != null)
+            if (serializer != null)
             {
                 builder.SetValueSerializer(serializer);
             }

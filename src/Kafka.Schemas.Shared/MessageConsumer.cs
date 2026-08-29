@@ -13,7 +13,7 @@ public class MessageConsumer<TKey, TValue> : IMessageConsumer<TKey, TValue>
     private readonly ConsumerConfig _consumerConfig;
     private readonly ILogger<MessageConsumer<TKey, TValue>> _logger;
     private readonly CachedSchemaRegistryClient? schemaRegistryClient;
-    private readonly IDeserializer<TValue> _deserializer;
+    private IDeserializer<TValue>? _deserializer;
 
     private readonly JsonSerializerConfig _jsonSerializerConfig = new JsonSerializerConfig
     {
@@ -23,19 +23,25 @@ public class MessageConsumer<TKey, TValue> : IMessageConsumer<TKey, TValue>
         Validate = false, // Set this back to true for validation
     };
 
-    public MessageConsumer(ConsumerConfig consumerConfig, IDeserializer<TValue> deserializer, ILogger<MessageConsumer<TKey, TValue>> logger)
+    public MessageConsumer(ConsumerConfig consumerConfig, IDeserializer<TValue>? deserializer, ILogger<MessageConsumer<TKey, TValue>> logger)
     {
         _consumerConfig = consumerConfig;
         _logger = logger;
         _deserializer = deserializer;
     }
+    public MessageConsumer(ConsumerConfig consumerConfig, IAsyncDeserializer<TValue>? asyncDeserializer, ILogger<MessageConsumer<TKey, TValue>> logger)
+    {
+        _consumerConfig = consumerConfig;
+        _logger = logger;
+        _deserializer = asyncDeserializer != null ? asyncDeserializer.AsSyncOverAsync() : null;
+    }
+
     public MessageConsumer(ConsumerConfig consumerConfig, ILogger<MessageConsumer<TKey, TValue>> logger)
     {
         _consumerConfig = consumerConfig;
         _logger = logger;
         _deserializer = new CustomDeserializer<TValue>();
     }
-
 
     public MessageConsumer(ConsumerConfig consumerConfig,
         SchemaRegistryConfig config,
@@ -56,12 +62,12 @@ public class MessageConsumer<TKey, TValue> : IMessageConsumer<TKey, TValue>
         return new ConsumerBuilder<TKey, byte[]>(_consumerConfig).Build();
     }
 
-    public void StartConsuming(string topic, Func<TKey, TValue, ConsumeStatus> consumerFactory, CancellationToken cancellationToken = default)
+    public async Task StartConsumingAsync(string topic, Func<TKey, TValue, Task<ConsumeStatus>> consumerFactory, CancellationToken cancellationToken = default)
     {
-        StartConsuming(topic, _consumerConfig.GroupId, consumerFactory, cancellationToken);
+        await StartConsumingAsync(topic, _consumerConfig.GroupId, consumerFactory, cancellationToken);
     }
 
-    public void StartConsuming(string topic, string groupId, Func<TKey, TValue, ConsumeStatus> consumerFactory, CancellationToken cancellationToken = default)
+    public async Task StartConsumingAsync(string topic, string groupId, Func<TKey, TValue, Task<ConsumeStatus>> consumerFactory, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrEmpty(topic, nameof(topic));
         ArgumentException.ThrowIfNullOrEmpty(groupId, nameof(groupId));
@@ -72,6 +78,8 @@ public class MessageConsumer<TKey, TValue> : IMessageConsumer<TKey, TValue>
             ["GroupId"] = groupId
         });
 
+        _deserializer ??= (IDeserializer<TValue>)DefaultSerializerConfig.GetDefaultSerializer(typeof(TValue));
+
         using (var consumer = BuildConsumer())
         {
             _logger.LogInformation($"Starting consumer for topic '{topic}' with group ID '{groupId}'");
@@ -80,13 +88,13 @@ public class MessageConsumer<TKey, TValue> : IMessageConsumer<TKey, TValue>
             {
                 while (!cancellationToken.IsCancellationRequested)
                 {
+                    var consumeResult = consumer.Consume(cancellationToken);
                     try
                     {
-                        var consumeResult = consumer.Consume(cancellationToken);
-                        var deserializedValue = _deserializer.Deserialize(consumeResult.Message.Value, false, new SerializationContext(MessageComponentType.Value, consumeResult.Topic));
+                        TValue deserializedValue = DesiriliseValue(consumeResult);
 
                         _logger.LogInformation($"Processing Consumed message at: '{consumeResult.TopicPartitionOffset}'.");
-                        var consumeStatus = consumerFactory(consumeResult.Message.Key, deserializedValue);
+                        var consumeStatus = await consumerFactory(consumeResult.Message.Key, deserializedValue);
                         _logger.LogInformation($"Consumed message at: '{consumeResult.TopicPartitionOffset}'.");
                     }
                     catch (ConsumeException e)
@@ -95,7 +103,8 @@ public class MessageConsumer<TKey, TValue> : IMessageConsumer<TKey, TValue>
                     }
                     finally
                     {
-                        consumer.Commit();
+                        consumer.Commit(consumeResult);
+                        consumer.StoreOffset(consumeResult);
                     }
                 }
             }
@@ -108,5 +117,15 @@ public class MessageConsumer<TKey, TValue> : IMessageConsumer<TKey, TValue>
                 consumer.Close();
             }
         }
+    }
+
+    private TValue DesiriliseValue(ConsumeResult<TKey, byte[]> consumeResult)
+    {
+        if(typeof(TValue) == typeof(byte[]))
+        {
+            return (TValue)(object)consumeResult.Message.Value;
+        }
+
+        return _deserializer.Deserialize(consumeResult.Message.Value, false, new SerializationContext(MessageComponentType.Value, consumeResult.Topic));
     }
 }
