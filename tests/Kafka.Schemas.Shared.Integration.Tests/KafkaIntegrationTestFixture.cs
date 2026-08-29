@@ -10,16 +10,12 @@ namespace Kafka.Schemas.Shared.Integration.Tests;
 
 public class KafkaIntegrationTestFixture : IAsyncLifetime
 {
-    private const string KafkaContainerAlias = "kafka";
-    private const string SchemaRegistryAlias = "schema-registry";
     private const int KafkaPort = 9092;
     private const int SchemaRegistryPort = 8081;
 
     private readonly INetwork _network;
     private readonly IContainer _kafkaContainer;
     private readonly IContainer _schemaRegistryContainer;
-    private const string KafkaImage = "confluentinc/cp-kafka:7.6.0"; // Use a specific version
-    private const string SchemaRegistryImage = "confluentinc/cp-schema-registry:7.6.0"; // Use a specific version
 
     public IServiceProvider Services { get; private set; }
     public IProducer<string, string> Producer { get; private set; }
@@ -30,39 +26,8 @@ public class KafkaIntegrationTestFixture : IAsyncLifetime
         _network = new NetworkBuilder()
             .WithName(Guid.NewGuid().ToString("D"))
             .Build();
-
-        _kafkaContainer = new ContainerBuilder(KafkaImage)
-            .WithName("kafka-test")
-            .WithPortBinding(KafkaPort, true)
-            .WithEnvironment("KAFKA_ENABLE_KRAFT", "yes")
-            .WithEnvironment("KAFKA_CFG_PROCESS_ROLES", "broker")
-            .WithEnvironment("KAFKA_CFG_NODE_ID", "1")
-            .WithEnvironment("KAFKA_CFG_CONTROLLER_QUORUM_VOTERS", "1@kafka-test:9093")
-            .WithEnvironment("KAFKA_CFG_LISTENERS", "PLAINTEXT://:9092,CONTROLLER://:9093")
-            .WithEnvironment("KAFKA_CFG_ADVERTISED_LISTENERS", "PLAINTEXT://localhost:9092")
-            .WithEnvironment("KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP", "PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT")
-            .WithEnvironment("ALLOW_PLAINTEXT_LISTENER", "yes")
-            .WithNetwork(_network)
-            .WithNetworkAliases(KafkaContainerAlias)
-            .WithWaitStrategy(Wait.ForUnixContainer().UntilInternalTcpPortIsAvailable(KafkaPort))
-            .Build();
-
-
-        _schemaRegistryContainer = new ContainerBuilder(SchemaRegistryImage)
-            .WithName("schema-registry-container")
-            .WithPortBinding(SchemaRegistryPort, true)
-            .WithNetwork(_network)
-            .WithNetworkAliases(SchemaRegistryAlias)
-            .WithEnvironment(new Dictionary<string, string>
-            {
-                ["SCHEMA_REGISTRY_HOST_NAME"] = SchemaRegistryAlias,
-                ["SCHEMA_REGISTRY_LISTENERS"] = "http://0.0.0.0:8081",
-                ["SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS"] = "PLAINTEXT://kafka-test:9092"
-            })
-            .WithWaitStrategy(Wait.ForUnixContainer().UntilInternalTcpPortIsAvailable(SchemaRegistryPort))
-            .DependsOn(_kafkaContainer)
-            .Build();
-
+        _kafkaContainer = BuildKafkaContainer();
+        _schemaRegistryContainer = BuildSchemaRegistryContainer();
 
         // Set env vars for test
         Environment.SetEnvironmentVariable("kafka__producer__bootstrapservers", "localhost:9092");
@@ -72,7 +37,7 @@ public class KafkaIntegrationTestFixture : IAsyncLifetime
         var config = new ConfigurationBuilder()
             .AddEnvironmentVariables()
             .Build();
-        
+
         var services = new ServiceCollection();
         services.AddKafkaServices(config);
 
@@ -82,6 +47,59 @@ public class KafkaIntegrationTestFixture : IAsyncLifetime
         Consumer = Services.GetRequiredService<IConsumer<string, string>>();
 
         Consumer.Subscribe(TopicName);
+    }
+
+    private IContainer BuildSchemaRegistryContainer()
+    {
+        return new ContainerBuilder("confluentinc/cp-schema-registry:latest")
+            .WithName("schema-registry-test")
+            .WithHostname("schema-registry")
+            .WithNetwork(_network)
+            .WithNetworkAliases("schema-registry")
+            .WithPortBinding(8081, 8081)
+            .WithEnvironment("SCHEMA_REGISTRY_HOSTNAME", "schema-registry")
+            .WithEnvironment("SCHEMA_REGISTRY_HOST_NAME", "schema-registry")
+            .WithEnvironment("SCHEMA_REGISTRY_LISTENERS", "http://0.0.0.0:8081")
+            .WithEnvironment("SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS", "kafka:29092")
+            .WithEnvironment("SCHEMA_REGISTRY_KAFKASTORE_SECURITY_PROTOCOL", "PLAINTEXT")
+            .WithEnvironment("SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_CLUSTER_ID", "YzkwZTdmNTYtNGF1ZC00NW")
+            .DependsOn(_kafkaContainer)
+            .WithWaitStrategy(Wait.ForUnixContainer().UntilInternalTcpPortIsAvailable(8081))
+            .Build();
+    }
+
+    private IContainer BuildKafkaContainer()
+    {
+        return new ContainerBuilder("confluentinc/cp-kafka:latest")
+            .WithName("kafka-test")
+            .WithHostname("kafka")
+            .WithNetwork(_network)
+            .WithNetworkAliases("kafka")
+            .WithPortBinding(9092, 9092)
+            .WithPortBinding(9093, 9093)
+            .WithEnvironment("CLUSTER_ID", "YzkwZTdmNTYtNGF1ZC00NW")
+            .WithEnvironment("KAFKA_NODE_ID", "1")
+            .WithEnvironment("KAFKA_PROCESS_ROLES", "broker,controller")
+            .WithEnvironment("KAFKA_CONTROLLER_LISTENER_NAMES", "CONTROLLER")
+            .WithEnvironment("KAFKA_LISTENERS",
+                "PLAINTEXT://kafka:29092," +
+                "PLAINTEXT_HOST://0.0.0.0:9092," +
+                "CONTROLLER://kafka:29093")
+            .WithEnvironment("KAFKA_LISTENER_SECURITY_PROTOCOL_MAP",
+                "PLAINTEXT:PLAINTEXT," +
+                "PLAINTEXT_HOST:PLAINTEXT," +
+                "CONTROLLER:PLAINTEXT")
+            .WithEnvironment("KAFKA_ADVERTISED_LISTENERS",
+                "PLAINTEXT://kafka:29092," +
+                "PLAINTEXT_HOST://localhost:9092")
+            .WithEnvironment("KAFKA_CONTROLLER_QUORUM_VOTERS", "1@kafka:29093")
+            .WithEnvironment("KAFKA_INTER_BROKER_LISTENER_NAME", "PLAINTEXT")
+            .WithEnvironment("KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR", "1")
+            .WithEnvironment("KAFKA_TRANSACTION_STATE_LOG_MIN_ISR", "1")
+            .WithEnvironment("KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR", "1")
+            .WithEnvironment("KAFKA_AUTO_CREATE_TOPICS_ENABLE", "true")
+            .WithWaitStrategy(Wait.ForUnixContainer().UntilInternalTcpPortIsAvailable(9092))
+            .Build();
     }
 
     public async Task InitializeAsync()
