@@ -149,7 +149,8 @@ public static class KafkaHostingExtensions
         {
             var consumerConfig = sp.GetRequiredService<ConsumerConfig>();
             var logger = sp.GetRequiredService<ILogger<MessageConsumer<TKey, TValue>>>();
-            return new MessageConsumer<TKey, TValue>(consumerConfig, deserializer, logger);
+            var dlqProducer = sp.GetRequiredService<ICommonDLQProducer<TKey>>();
+            return new MessageConsumer<TKey, TValue>(consumerConfig, deserializer, dlqProducer, logger);
         });
         return services;
     }
@@ -161,8 +162,9 @@ public static class KafkaHostingExtensions
         services.AddSingleton<IMessageConsumer<TKey, TValue>>(sp =>
         {
             var consumerConfig = sp.GetRequiredService<ConsumerConfig>();
+            var dlqProducer = sp.GetRequiredService<ICommonDLQProducer<TKey>>();
             var logger = sp.GetRequiredService<ILogger<MessageConsumer<TKey, TValue>>>();
-            return new MessageConsumer<TKey, TValue>(consumerConfig, deserializer, logger);
+            return new MessageConsumer<TKey, TValue>(consumerConfig, deserializer, dlqProducer, logger);
         });
         return services;
     }
@@ -173,8 +175,9 @@ public static class KafkaHostingExtensions
         services.AddSingleton<IMessageConsumer<TKey, TValue>>(sp =>
         {
             var consumerConfig = sp.GetRequiredService<ConsumerConfig>();
+            var dlqProducer = sp.GetRequiredService<ICommonDLQProducer<TKey>>();
             var logger = sp.GetRequiredService<ILogger<MessageConsumer<TKey, TValue>>>();
-            return new MessageConsumer<TKey, TValue>(consumerConfig, deserializer, logger);
+            return new MessageConsumer<TKey, TValue>(consumerConfig, deserializer, dlqProducer, logger);
         });
         return services;
     }
@@ -187,8 +190,9 @@ public static class KafkaHostingExtensions
         {
             var consumerConfig = sp.GetRequiredService<ConsumerConfig>();
             var schemaRegistryConfig = sp.GetRequiredService<SchemaRegistryConfig>();
+            var dlqProducer = sp.GetRequiredService<ICommonDLQProducer<TKey>>();
             var logger = sp.GetRequiredService<ILogger<MessageConsumer<TKey, TValue>>>();
-            return new MessageConsumer<TKey, TValue>(consumerConfig, schemaRegistryConfig, logger, jsonSerializerConfig);
+            return new MessageConsumer<TKey, TValue>(consumerConfig, schemaRegistryConfig, dlqProducer, logger, jsonSerializerConfig);
         });
         return services;
     }

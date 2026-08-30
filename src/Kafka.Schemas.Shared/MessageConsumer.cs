@@ -14,6 +14,7 @@ public class MessageConsumer<TKey, TValue> : IMessageConsumer<TKey, TValue>
     private readonly ILogger<MessageConsumer<TKey, TValue>> _logger;
     private readonly CachedSchemaRegistryClient? schemaRegistryClient;
     private IDeserializer<TValue>? _deserializer;
+    private readonly ICommonDLQProducer<TKey> _dlqProducer;
 
     private readonly JsonSerializerConfig _jsonSerializerConfig = new JsonSerializerConfig
     {
@@ -23,28 +24,40 @@ public class MessageConsumer<TKey, TValue> : IMessageConsumer<TKey, TValue>
         Validate = false, // Set this back to true for validation
     };
 
-    public MessageConsumer(ConsumerConfig consumerConfig, IDeserializer<TValue>? deserializer, ILogger<MessageConsumer<TKey, TValue>> logger)
+    public MessageConsumer(ConsumerConfig consumerConfig,
+        IDeserializer<TValue>? deserializer,
+        ICommonDLQProducer<TKey> dlqProducer,
+        ILogger<MessageConsumer<TKey, TValue>> logger)
     {
         _consumerConfig = consumerConfig;
         _logger = logger;
         _deserializer = deserializer;
+        _dlqProducer = dlqProducer;
     }
-    public MessageConsumer(ConsumerConfig consumerConfig, IAsyncDeserializer<TValue>? asyncDeserializer, ILogger<MessageConsumer<TKey, TValue>> logger)
+    public MessageConsumer(ConsumerConfig consumerConfig, 
+        IAsyncDeserializer<TValue>? asyncDeserializer,
+        ICommonDLQProducer<TKey> dlqProducer,
+        ILogger<MessageConsumer<TKey, TValue>> logger)
     {
         _consumerConfig = consumerConfig;
         _logger = logger;
         _deserializer = asyncDeserializer != null ? asyncDeserializer.AsSyncOverAsync() : null;
+        _dlqProducer = dlqProducer;
     }
 
-    public MessageConsumer(ConsumerConfig consumerConfig, ILogger<MessageConsumer<TKey, TValue>> logger)
+    public MessageConsumer(ConsumerConfig consumerConfig,
+        ICommonDLQProducer<TKey> dlqProducer,
+        ILogger<MessageConsumer<TKey, TValue>> logger)
     {
         _consumerConfig = consumerConfig;
         _logger = logger;
         _deserializer = new CustomDeserializer<TValue>();
+        _dlqProducer = dlqProducer;
     }
 
     public MessageConsumer(ConsumerConfig consumerConfig,
         SchemaRegistryConfig config,
+        ICommonDLQProducer<TKey> dlqProducer,
         ILogger<MessageConsumer<TKey, TValue>> logger,
         JsonSerializerConfig? jsonSerializerConfig = null)
     {
@@ -55,6 +68,7 @@ public class MessageConsumer<TKey, TValue> : IMessageConsumer<TKey, TValue>
 
         schemaRegistryClient = new CachedSchemaRegistryClient(config);
         _deserializer = new JsonDeserializer<TValue>(schemaRegistryClient, jsonSerializerConfig).AsSyncOverAsync();
+        _dlqProducer = dlqProducer;
     }
 
     private IConsumer<TKey, byte[]> BuildConsumer()
