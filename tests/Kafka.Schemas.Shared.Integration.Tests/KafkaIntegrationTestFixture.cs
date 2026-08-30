@@ -47,7 +47,7 @@ public class KafkaIntegrationTestFixture : IAsyncLifetime
         var consumerConfig = new ConsumerConfig
         {
             BootstrapServers = "localhost:9092",
-            GroupId = $"test-group-{Guid.NewGuid()}",
+            GroupId = "env-test-group-app",
             AutoOffsetReset = AutoOffsetReset.Earliest,
             EnableAutoCommit = false
         };
@@ -61,16 +61,21 @@ public class KafkaIntegrationTestFixture : IAsyncLifetime
         };
 
         services
-            .AddKafkaServices(config)
-            //.AddKafka(producerConfig, consumerConfig, schemaRegistryConfig)
+            //.AddKafkaServices(config)
+            .AddKafka(producerConfig, consumerConfig, schemaRegistryConfig)
             .AddMessageProducerWithDefaultSerializer<string, TestMessage>()
             .AddMessageConsumerWithDefaultSerializer<string, TestMessage>();
 
         Services = services.BuildServiceProvider();
-        Producer = Services.GetRequiredService<IProducer<string, string>>();
-        Consumer = Services.GetRequiredService<IConsumer<string, string>>();
+        //Producer = Services.GetRequiredService<IProducer<string, string>>();
+        //Consumer = Services.GetRequiredService<IConsumer<string, string>>();
+        //Consumer.Subscribe(TopicName);
 
-        Consumer.Subscribe(TopicName);
+        var consumerConfig1 = Services.GetRequiredService<ConsumerConfig>();
+        var producerConfig1 = Services.GetRequiredService<ProducerConfig>();
+        var schemaRegistryConfig1 = Services.GetRequiredService<Confluent.SchemaRegistry.SchemaRegistryConfig>();
+
+        
     }
 
     private void SetupContainers()
