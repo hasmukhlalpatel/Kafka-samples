@@ -33,16 +33,12 @@ public class CustomSerializer<TValue> : IAsyncSerializer<TValue>
         }
 
         string jsonText = JsonConvert.SerializeObject(data, jsonSchemaGeneratorSettingsSerializerSettings);
-        using (var memoryStream = new MemoryStream())
-        {
-            using (var streamWriter = new StreamWriter(memoryStream, Encoding.UTF8))
-            {
-                streamWriter.Write((byte)0); // Write magic byte
-                streamWriter.Write(defaultSchemaId);
-                await streamWriter.WriteAsync(jsonText);
-                await streamWriter.FlushAsync();
-                return memoryStream.ToArray();
-            }
-        }
+        var jsonBytes = Encoding.UTF8.GetBytes(jsonText);
+        var schemaIdBytes = BitConverter.GetBytes(defaultSchemaId);
+        var resultBytes = new byte[1 + schemaIdBytes.Length + jsonBytes.Length];
+        resultBytes[0] = 0; // Magic byte
+        schemaIdBytes.CopyTo(resultBytes, 1);
+        jsonBytes.CopyTo(resultBytes, 1 + schemaIdBytes.Length);
+        return resultBytes;
     }
 }

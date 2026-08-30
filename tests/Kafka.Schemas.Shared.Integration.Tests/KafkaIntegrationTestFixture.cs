@@ -61,8 +61,8 @@ public class KafkaIntegrationTestFixture : IAsyncLifetime
         };
 
         services
-            //.AddKafkaServices(config, consumerConfig, producerConfig)
-            .AddKafka(producerConfig, consumerConfig, schemaRegistryConfig)
+            .AddKafkaServices(config)
+            //.AddKafka(producerConfig, consumerConfig, schemaRegistryConfig)
             .AddMessageProducerWithDefaultSerializer<string, TestMessage>()
             .AddMessageConsumerWithDefaultSerializer<string, TestMessage>();
 
