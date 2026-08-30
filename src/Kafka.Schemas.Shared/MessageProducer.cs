@@ -31,7 +31,7 @@ public class MessageProducer<TKey, TValue> : IMessageProducer<TKey, TValue>
         _producer = InitializeProducer(producerConfig, serializer);
         _logger = logger;
     }
-    public MessageProducer(ProducerConfig producerConfig, ISerializer<TValue> serializer, ILogger<MessageProducer<TKey, TValue>> logger)
+    public MessageProducer(ProducerConfig producerConfig, ISerializer<TValue>? serializer, ILogger<MessageProducer<TKey, TValue>> logger)
     {
         _producer = InitializeProducer(producerConfig, serializer);
         _logger = logger;

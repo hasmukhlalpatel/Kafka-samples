@@ -3,10 +3,11 @@ using Microsoft.Extensions.Logging;
 
 namespace Kafka.Schemas.Shared;
 
-public class DeadLetterMessageProducer<TKey, TValue> : MessageProducer<TKey, TValue>, IDeadLetterMessageProducer<TKey, TValue>
+public class DeadLetterMessageProducer<TKey, TValue> : MessageProducer<TKey, TValue>,
+    IDeadLetterMessageProducer<TKey, TValue>
     where TValue : class
 {
-    public DeadLetterMessageProducer(ProducerConfig producerConfig, ILogger<MessageProducer<TKey, TValue>> logger) : base(producerConfig, logger)
+    public DeadLetterMessageProducer(ProducerConfig producerConfig, ILogger<DeadLetterMessageProducer<TKey, TValue>> logger) : base(producerConfig, logger)
     {
     }
 

@@ -14,7 +14,7 @@ public class MessageConsumer<TKey, TValue> : IMessageConsumer<TKey, TValue>
     private readonly ILogger<MessageConsumer<TKey, TValue>> _logger;
     private readonly CachedSchemaRegistryClient? schemaRegistryClient;
     private IDeserializer<TValue>? _deserializer;
-    private readonly ICommonDLQProducer<TKey> _dlqProducer;
+    private readonly IDeadLetterMessageProducer<TKey, byte[]> _dlqProducer;
 
     private readonly JsonSerializerConfig _jsonSerializerConfig = new JsonSerializerConfig
     {
@@ -26,7 +26,7 @@ public class MessageConsumer<TKey, TValue> : IMessageConsumer<TKey, TValue>
 
     public MessageConsumer(ConsumerConfig consumerConfig,
         IDeserializer<TValue>? deserializer,
-        ICommonDLQProducer<TKey> dlqProducer,
+        IDeadLetterMessageProducer<TKey, byte[]> dlqProducer,
         ILogger<MessageConsumer<TKey, TValue>> logger)
     {
         _consumerConfig = consumerConfig;
@@ -36,7 +36,7 @@ public class MessageConsumer<TKey, TValue> : IMessageConsumer<TKey, TValue>
     }
     public MessageConsumer(ConsumerConfig consumerConfig, 
         IAsyncDeserializer<TValue>? asyncDeserializer,
-        ICommonDLQProducer<TKey> dlqProducer,
+        IDeadLetterMessageProducer<TKey, byte[]> dlqProducer,
         ILogger<MessageConsumer<TKey, TValue>> logger)
     {
         _consumerConfig = consumerConfig;
@@ -46,7 +46,7 @@ public class MessageConsumer<TKey, TValue> : IMessageConsumer<TKey, TValue>
     }
 
     public MessageConsumer(ConsumerConfig consumerConfig,
-        ICommonDLQProducer<TKey> dlqProducer,
+        IDeadLetterMessageProducer<TKey, byte[]> dlqProducer,
         ILogger<MessageConsumer<TKey, TValue>> logger)
     {
         _consumerConfig = consumerConfig;
@@ -57,7 +57,7 @@ public class MessageConsumer<TKey, TValue> : IMessageConsumer<TKey, TValue>
 
     public MessageConsumer(ConsumerConfig consumerConfig,
         SchemaRegistryConfig config,
-        ICommonDLQProducer<TKey> dlqProducer,
+        IDeadLetterMessageProducer<TKey, byte[]> dlqProducer,
         ILogger<MessageConsumer<TKey, TValue>> logger,
         JsonSerializerConfig? jsonSerializerConfig = null)
     {

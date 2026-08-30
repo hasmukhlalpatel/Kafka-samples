@@ -5,6 +5,7 @@ using Kafka.Schemas.Shared.Serialization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json.Linq;
 
 namespace Kafka.Schemas.Shared.Extensions;
 
@@ -121,6 +122,7 @@ public static class KafkaHostingExtensions
         });
         return services;
     }
+
     public static IServiceCollection AddMessageProducerWithSchemaRegistry<TKey, TValue>(this IServiceCollection services,
     JsonSerializerConfig? jsonSerializerConfig = null)
     where TValue : class
@@ -135,6 +137,17 @@ public static class KafkaHostingExtensions
         return services;
     }
 
+    public static IServiceCollection AddDeadLetterMessageProducer<TKey>(this IServiceCollection services)
+    {
+        services.AddSingleton<IDeadLetterMessageProducer<TKey, byte[]>>(sp =>
+        {
+            var producerConfig = sp.GetRequiredService<ProducerConfig>();
+            var logger = sp.GetRequiredService<ILogger<DeadLetterMessageProducer<TKey, byte[]>>>();
+            return new DeadLetterMessageProducer<TKey, byte[]>(producerConfig, logger);
+        });
+        return services;
+    }
+
     public static IServiceCollection AddMessageConsumer(this IServiceCollection services)
     {
         services.AddSingleton(typeof(IMessageConsumer<,>), typeof(MessageConsumer<,>));
@@ -144,12 +157,14 @@ public static class KafkaHostingExtensions
     public static IServiceCollection AddMessageConsumerWithDefaultSerializer<TKey, TValue>(this IServiceCollection services)
     where TValue : class
     {
+        services.AddDeadLetterMessageProducer<TKey>();
+
         var deserializer = new CustomDeserializer<TValue>();
         services.AddSingleton<IMessageConsumer<TKey, TValue>>(sp =>
         {
             var consumerConfig = sp.GetRequiredService<ConsumerConfig>();
             var logger = sp.GetRequiredService<ILogger<MessageConsumer<TKey, TValue>>>();
-            var dlqProducer = sp.GetRequiredService<ICommonDLQProducer<TKey>>();
+            var dlqProducer = sp.GetRequiredService<IDeadLetterMessageProducer<TKey, byte[]>>();
             return new MessageConsumer<TKey, TValue>(consumerConfig, deserializer, dlqProducer, logger);
         });
         return services;
@@ -159,10 +174,12 @@ public static class KafkaHostingExtensions
     IAsyncDeserializer<TValue>? deserializer = null)
     where TValue : class
     {
+        services.AddDeadLetterMessageProducer<TKey>();
+
         services.AddSingleton<IMessageConsumer<TKey, TValue>>(sp =>
         {
             var consumerConfig = sp.GetRequiredService<ConsumerConfig>();
-            var dlqProducer = sp.GetRequiredService<ICommonDLQProducer<TKey>>();
+            var dlqProducer = sp.GetRequiredService<IDeadLetterMessageProducer<TKey, byte[]>>();
             var logger = sp.GetRequiredService<ILogger<MessageConsumer<TKey, TValue>>>();
             return new MessageConsumer<TKey, TValue>(consumerConfig, deserializer, dlqProducer, logger);
         });
@@ -172,10 +189,12 @@ public static class KafkaHostingExtensions
         IDeserializer<TValue>? deserializer = null)
         where TValue : class
     {
+        services.AddDeadLetterMessageProducer<TKey>();
+
         services.AddSingleton<IMessageConsumer<TKey, TValue>>(sp =>
         {
             var consumerConfig = sp.GetRequiredService<ConsumerConfig>();
-            var dlqProducer = sp.GetRequiredService<ICommonDLQProducer<TKey>>();
+            var dlqProducer = sp.GetRequiredService<IDeadLetterMessageProducer<TKey, byte[]>>();
             var logger = sp.GetRequiredService<ILogger<MessageConsumer<TKey, TValue>>>();
             return new MessageConsumer<TKey, TValue>(consumerConfig, deserializer, dlqProducer, logger);
         });
@@ -184,13 +203,15 @@ public static class KafkaHostingExtensions
 
     public static IServiceCollection AddMessageConsumerWithSchemaRegistry<TKey, TValue>(this IServiceCollection services,
     JsonSerializerConfig? jsonSerializerConfig = null)
-    where TValue : class
+        where TValue : class
     {
+        services.AddDeadLetterMessageProducer<TKey>();
+
         services.AddSingleton<IMessageConsumer<TKey, TValue>>(sp =>
         {
             var consumerConfig = sp.GetRequiredService<ConsumerConfig>();
             var schemaRegistryConfig = sp.GetRequiredService<SchemaRegistryConfig>();
-            var dlqProducer = sp.GetRequiredService<ICommonDLQProducer<TKey>>();
+            var dlqProducer = sp.GetRequiredService<IDeadLetterMessageProducer<TKey, byte[]>>();
             var logger = sp.GetRequiredService<ILogger<MessageConsumer<TKey, TValue>>>();
             return new MessageConsumer<TKey, TValue>(consumerConfig, schemaRegistryConfig, dlqProducer, logger, jsonSerializerConfig);
         });
