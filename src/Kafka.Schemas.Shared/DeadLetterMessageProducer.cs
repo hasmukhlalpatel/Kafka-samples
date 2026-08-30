@@ -11,9 +11,9 @@ public class DeadLetterMessageProducer<TKey, TValue> : MessageProducer<TKey, TVa
     {
     }
 
-    public async Task ProduceDeadLetterAsync(string originalTopic, string consumerGroup, TKey key, TValue value, IReadOnlyDictionary<string, string> headers, CancellationToken cancellationToken = default)
+    public async Task ProduceDeadLetterAsync(string originalTopic, string consumerGroup, ConsumeResult<TKey, TValue> consumeResult, Exception exception, CancellationToken cancellationToken = default)
     {
         var deadLetterTopic = $"{originalTopic}-{consumerGroup}-dead-letter";
-        await ProduceAsync(deadLetterTopic, key, value, headers, cancellationToken);
+        await ProduceAsync(deadLetterTopic, consumeResult.Message.Key, consumeResult.Message.Value, null, cancellationToken);
     }
 }

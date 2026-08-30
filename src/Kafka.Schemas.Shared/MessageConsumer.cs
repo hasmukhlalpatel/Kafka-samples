@@ -2,8 +2,10 @@
 using Confluent.Kafka.SyncOverAsync;
 using Confluent.SchemaRegistry;
 using Confluent.SchemaRegistry.Serdes;
+using Kafka.Schemas.Shared.Extensions;
 using Kafka.Schemas.Shared.Serialization;
 using Microsoft.Extensions.Logging;
+using Observability.Shared;
 
 namespace Kafka.Schemas.Shared;
 
@@ -70,7 +72,7 @@ public class MessageConsumer<TKey, TValue> : IMessageConsumer<TKey, TValue>
         _deserializer = new JsonDeserializer<TValue>(schemaRegistryClient, jsonSerializerConfig).AsSyncOverAsync();
         _dlqProducer = dlqProducer;
     }
-
+    private ActivitySourceProvider activitySource = new ActivitySourceProvider("Kafka.MessageConsumer");
     private IConsumer<TKey, byte[]> BuildConsumer()
     {
         return new ConsumerBuilder<TKey, byte[]>(_consumerConfig).Build();
@@ -102,7 +104,22 @@ public class MessageConsumer<TKey, TValue> : IMessageConsumer<TKey, TValue>
             {
                 while (!cancellationToken.IsCancellationRequested)
                 {
+                    var activity = activitySource.StartConsumerActivity($"topic:{topic},groupId:{groupId}");
                     var consumeResult = consumer.Consume(cancellationToken);
+
+                    Guid correlationId = Guid.NewGuid();
+                    if (consumeResult.Message.Headers.TryGetHeader(LogicalCallContext.Constants.XCorrelationId, out string strCorrelationId))
+                    {
+                        correlationId = Guid.Parse(strCorrelationId);
+                    }
+                    using var appContext = new ApplicationContextScope(correlationId);
+                    //Get CorrelationId from headers and add to activity
+                    using var innerScope = _logger.BeginScope(new Dictionary<string, object>
+                    {
+                        ["Topic"] = topic,
+                        [LogicalCallContext.Constants.XCorrelationId] = ApplicationContextScope.Current.CorrelationId
+                    });
+
                     try
                     {
                         TValue deserializedValue = DesiriliseValue(consumeResult);
@@ -110,10 +127,15 @@ public class MessageConsumer<TKey, TValue> : IMessageConsumer<TKey, TValue>
                         _logger.LogInformation($"Processing Consumed message at: '{consumeResult.TopicPartitionOffset}'.");
                         var consumeStatus = await consumerFactory(consumeResult.Message.Key, deserializedValue);
                         _logger.LogInformation($"Consumed message at: '{consumeResult.TopicPartitionOffset}'.");
+                        if (consumeStatus == ConsumeStatus.DeadLetter)
+                        {
+                            await HandleDeadLetterAsync(topic, groupId, consumeResult, new Exception("Message sent to dead letter queue due to consumer logic."), cancellationToken);
+                        }
                     }
                     catch (ConsumeException e)
                     {
                         _logger.LogError($"Error consuming message: {e.Error.Reason}");
+                        await HandleDeadLetterAsync(topic, groupId, consumeResult, e, cancellationToken);
                     }
                     finally
                     {
@@ -144,6 +166,19 @@ public class MessageConsumer<TKey, TValue> : IMessageConsumer<TKey, TValue>
             return (TValue)(object)consumeResult.Message.Value;
         }
 
-        return _deserializer.Deserialize(consumeResult.Message.Value, false, new SerializationContext(MessageComponentType.Value, consumeResult.Topic));
+        try
+        {
+            return _deserializer.Deserialize(consumeResult.Message.Value, false, new SerializationContext(MessageComponentType.Value, consumeResult.Topic));
+        }
+        catch (Exception ex)
+        {
+            throw new ConsumeException(null,null, ex);
+        }
+    }
+
+    private async Task HandleDeadLetterAsync(string topic, string groupId, ConsumeResult<TKey, byte[]> consumeResult, Exception exception, CancellationToken cancellationToken = default)
+    {
+        _logger.LogError(exception, $"Sending message to dead letter queue for topic '{topic}' and group ID '{groupId}'");
+        await _dlqProducer.ProduceDeadLetterAsync(topic, groupId, consumeResult, exception, cancellationToken);
     }
 }
