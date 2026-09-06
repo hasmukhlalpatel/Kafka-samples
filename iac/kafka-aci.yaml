@@ -9,10 +9,12 @@ properties:
         ports:
           - port: 9092
             protocol: TCP
+          - port: 29092
+            protocol: TCP
         resources:
           requests:
             cpu: 1
-            memoryInGb: 1.0
+            memoryInGb: 1.5
         environmentVariables:
           - name: CLUSTER_ID
             value: 'YzkwZTdmNTYtNGF1ZC00NW'
@@ -27,7 +29,7 @@ properties:
           - name: KAFKA_LISTENER_SECURITY_PROTOCOL_MAP
             value: 'PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT,CONTROLLER:PLAINTEXT'
           - name: KAFKA_ADVERTISED_LISTENERS
-            value: 'PLAINTEXT://localhost:29092,PLAINTEXT_HOST://kafka-aci.uksouth.azurecontainer.io:9092'
+            value: 'PLAINTEXT://kafka-aci.uksouth.azurecontainer.io:29092,PLAINTEXT_HOST://kafka-aci.uksouth.azurecontainer.io:9092'
           - name: KAFKA_CONTROLLER_QUORUM_VOTERS
             value: '1@localhost:29093'
           - name: KAFKA_INTER_BROKER_LISTENER_NAME
@@ -45,6 +47,8 @@ properties:
     type: Public
     ports:
       - port: 9092
+        protocol: TCP
+      - port: 29092
         protocol: TCP
     dnsNameLabel: kafka-aci
   restartPolicy: Always
