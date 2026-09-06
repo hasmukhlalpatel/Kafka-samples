@@ -10,6 +10,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.gitignore = .gitignore
 		Directory.Packages.props = Directory.Packages.props
 		docker-compose.yml = docker-compose.yml
+		iac\kafka-aci.yaml = iac\kafka-aci.yaml
 		LICENSE = LICENSE
 		README.md = README.md
 	EndProjectSection
@@ -35,6 +36,12 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Observability.Shared", "src\Observability.Shared\Observability.Shared.csproj", "{02AEC044-7F7B-4869-8437-3DA48CD5259A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kafka.Schemas.Shared.Integration.Tests", "tests\Kafka.Schemas.Shared.Integration.Tests\Kafka.Schemas.Shared.Integration.Tests.csproj", "{C01538B3-3200-4A89-9C73-BF9DD0431C78}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "iac", "iac", "{9E9D9690-CF91-48DC-AFE6-4688D8CE2776}"
+	ProjectSection(SolutionItems) = preProject
+		iac\kafka-aci.yaml = iac\kafka-aci.yaml
+		iac\README.md = iac\README.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -96,6 +103,7 @@ Global
 		{095AF882-372D-23C4-761B-AC9DD2751F9B} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{02AEC044-7F7B-4869-8437-3DA48CD5259A} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{C01538B3-3200-4A89-9C73-BF9DD0431C78} = {905187CC-0646-49B1-9956-EBC4CFFB02A5}
+		{9E9D9690-CF91-48DC-AFE6-4688D8CE2776} = {8EC462FD-D22E-90A8-E5CE-7E832BA40C5D}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {DB39DEA7-2A42-48CB-AF65-1797BC25C7C2}
