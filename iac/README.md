@@ -84,3 +84,34 @@ docker pull nginx:alpine3.24-perl
 docker tag nginx:alpine3.24-perl myacr080926.azurecr.io/test/nginx:alpine3.24-perl
 docker push myacr080926.azurecr.io/test/nginx:alpine3.24-perl
 ```
+
+## build and push image to Azure container registry
+
+cd to the solution folder and run the following command to build the image
+```bash
+docker build -t sample.consumer -f .\src\Samples.Kafka.Consumer.Worker\Dockerfile .
+docker images
+docker tag localhost/sample.consumer myacr080926.azurecr.io/test/sample.consumer
+docker push myacr080926.azurecr.io/test/sample.consumer
+```
+
+## deploy the image to Azure Container Apps
+```bash
+az containerapp create --name sample-consumer-app --resource-group aca-test --image myacr080926.azurecr.io/test/sample.consumer --environment <ENVIRONMENT_NAME> --registry-server myacr080926.azurecr.io --registry-username <USERNAME> --registry-password <PASSWORD>
+```
+
+## update sample consumer app to use kafka scalar
+```powershell
+az containerapp update `
+  --name "kafka-consumer" `
+  --resource-group "aca-test" `
+  --min-replicas 1 `
+  --max-replicas 3 `
+  --scale-rule-name "kafka-lag" `
+  --scale-rule-type "kafka" `
+  --scale-rule-metadata `
+      "bootstrapServers=kafka:9092" `
+      "consumerGroup=my-consumer-group" `
+      "topic=my-topic" `
+      "lagThreshold=10"
+```

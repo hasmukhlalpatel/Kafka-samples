@@ -23,13 +23,7 @@ var app = builder.Build();
 
 app.MapGet("/", () => "Hello World!");
 
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
 app.Run();
-
 
 
 class KafkaConsumerWorker : BackgroundService
@@ -54,6 +48,7 @@ class KafkaConsumerWorker : BackgroundService
                 {
                     _logger.LogInformation($"Consumed message '{consumeResult.Message.Value}' at: '{consumeResult.TopicPartitionOffset}'.");
                 }
+                await Task.Delay(5000, stoppingToken); // Simulate some processing time
             }
             catch (ConsumeException e)
             {
