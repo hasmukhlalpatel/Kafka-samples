@@ -110,7 +110,7 @@ az containerapp update `
   --scale-rule-name "kafka-lag" `
   --scale-rule-type "kafka" `
   --scale-rule-metadata `
-      "bootstrapServers=kafka:9092" `
+      "bootstrapServers=my-local-kafka-test.uksouth.azurecontainer.io:9092" `
       "consumerGroup=my-consumer-group" `
       "topic=my-topic" `
       "lagThreshold=10"

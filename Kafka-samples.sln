@@ -46,6 +46,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "iac", "iac", "{9E9D9690-CF9
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.Kafka.Consumer.Worker", "src\Samples.Kafka.Consumer.Worker\Samples.Kafka.Consumer.Worker.csproj", "{82AE629C-1AAA-8916-9412-308657FF5C16}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.Kafka.Producer.Worker", "src\Samples.Kafka.Producer.Worker\Samples.Kafka.Producer.Worker.csproj", "{3D3FFF5F-41B8-BA9A-5C9B-3C997F85721E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -96,6 +98,10 @@ Global
 		{82AE629C-1AAA-8916-9412-308657FF5C16}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{82AE629C-1AAA-8916-9412-308657FF5C16}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{82AE629C-1AAA-8916-9412-308657FF5C16}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3D3FFF5F-41B8-BA9A-5C9B-3C997F85721E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3D3FFF5F-41B8-BA9A-5C9B-3C997F85721E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3D3FFF5F-41B8-BA9A-5C9B-3C997F85721E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3D3FFF5F-41B8-BA9A-5C9B-3C997F85721E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -112,6 +118,7 @@ Global
 		{C01538B3-3200-4A89-9C73-BF9DD0431C78} = {905187CC-0646-49B1-9956-EBC4CFFB02A5}
 		{9E9D9690-CF91-48DC-AFE6-4688D8CE2776} = {8EC462FD-D22E-90A8-E5CE-7E832BA40C5D}
 		{82AE629C-1AAA-8916-9412-308657FF5C16} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{3D3FFF5F-41B8-BA9A-5C9B-3C997F85721E} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {DB39DEA7-2A42-48CB-AF65-1797BC25C7C2}
