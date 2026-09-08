@@ -1,6 +1,6 @@
 apiVersion: 2019-12-01
 location: uksouth
-name: kafka-container-group
+name: local-kafka
 properties:
   containers:
     - name: kafka
@@ -29,7 +29,7 @@ properties:
           - name: KAFKA_LISTENER_SECURITY_PROTOCOL_MAP
             value: 'PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT,CONTROLLER:PLAINTEXT'
           - name: KAFKA_ADVERTISED_LISTENERS
-            value: 'PLAINTEXT://kafka-aci.uksouth.azurecontainer.io:29092,PLAINTEXT_HOST://kafka-aci.uksouth.azurecontainer.io:9092'
+            value: 'PLAINTEXT://my-local-kafka-test.uksouth.azurecontainer.io:29092,PLAINTEXT_HOST://my-local-kafka-test.uksouth.azurecontainer.io:9092'
           - name: KAFKA_CONTROLLER_QUORUM_VOTERS
             value: '1@localhost:29093'
           - name: KAFKA_INTER_BROKER_LISTENER_NAME
@@ -45,12 +45,12 @@ properties:
   osType: Linux
   ipAddress:
     type: Public
+    dnsNameLabel: my-local-kafka-test
     ports:
       - port: 9092
         protocol: TCP
       - port: 29092
         protocol: TCP
-    dnsNameLabel: kafka-aci
   restartPolicy: Always
 tags:
   environment: dev

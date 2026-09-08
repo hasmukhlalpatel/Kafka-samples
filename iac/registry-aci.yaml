@@ -1,0 +1,34 @@
+apiVersion: 2019-12-01
+location: uksouth
+name: local-registry
+properties:
+  containers:
+    - name: registry
+      properties:
+        image: registry:3
+        ports:
+          - port: 80
+            protocol: TCP
+        resources:
+          requests:
+            cpu: 1
+            memoryInGB: 1
+        environmentVariables:
+          - name: REGISTRY_HTTP_ADDR
+            value: 0.0.0.0:80
+
+  osType: Linux
+
+  ipAddress:
+    type: Public
+    dnsNameLabel: my-local-registry-test
+    ports:
+      - port: 80
+        protocol: TCP
+
+  restartPolicy: Always
+
+tags:
+  purpose: container-registry-test
+
+type: Microsoft.ContainerInstance/containerGroups

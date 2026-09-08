@@ -41,6 +41,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "iac", "iac", "{9E9D9690-CF9
 	ProjectSection(SolutionItems) = preProject
 		iac\kafka-aci.yaml = iac\kafka-aci.yaml
 		iac\README.md = iac\README.md
+		iac\registry-aci.yaml = iac\registry-aci.yaml
 	EndProjectSection
 EndProject
 Global

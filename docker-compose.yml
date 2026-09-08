@@ -69,9 +69,10 @@ services:
       - "8080:8080"
     environment:
       KAFKA_CLUSTERS_0_NAME: local
-      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
-    depends_on:
-      - kafka
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: my-local-kafka-test.uksouth.azurecontainer.io:29092
+    #  KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+    # depends_on:
+    #   - kafka
     networks:
       - kafka-net
 
