@@ -115,3 +115,12 @@ az containerapp update `
       "topic=my-topic" `
       "lagThreshold=10"
 ```
+
+## check scalar status
+```powershell
+az containerapp show `
+  --name "kafka-consumer" `
+  --resource-group "aca-test" `
+  --query "properties.template.scale" `
+  -o json
+```
