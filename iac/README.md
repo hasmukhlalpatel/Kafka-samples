@@ -47,3 +47,40 @@ podman push --tls-verify=false `
   nginx:latest `
   my-local-registry-test.uksouth.azurecontainer.io/test/nginx:latest
 ```
+
+## Create Azure contianer registry
+```bash
+az acr create --resource-group aca-test --name myacr080926 --sku Basic --location uksouth
+
+az acr show --resource-group aca-test --name myacr080926 --query loginServer --output tsv
+
+-- docker login to the registry
+az acr login --name myacr080926
+
+-- Get token for podman login
+podman login myacr080926.azurecr.io `
+  --username 00000000-0000-0000-0000-000000000000 `
+  --password "<ACCESS_TOKEN>"
+
+podman login myacr080926.azurecr.io `
+  --username 00000000-0000-0000-0000-000000000000 `
+  --password "<ACCESS_TOKEN>"
+
+-- podman login to the registry
+$token = az acr login `
+  --name myacr080926 `
+  --expose-token `
+  --query accessToken `
+  --output tsv
+
+podman login myacr080926.azurecr.io `
+  --username 00000000-0000-0000-0000-000000000000 `
+  --password $token
+```
+
+### push image to Azure container registry
+```bash
+docker pull nginx:alpine3.24-perl
+docker tag nginx:alpine3.24-perl myacr080926.azurecr.io/test/nginx:alpine3.24-perl
+docker push myacr080926.azurecr.io/test/nginx:alpine3.24-perl
+```
