@@ -46,4 +46,8 @@ builder.AddProject<Projects.Samples_Web_Api>("samples-web-api")
     ;
     //.WithHealthCheck("/health");
 
+builder.AddProject<Projects.Samples_Kafka_Consumer_Worker>("samples-kafka-consumer-worker");
+    //.WithHealthCheck("/health");
+
+
 builder.Build().Run();
