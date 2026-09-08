@@ -40,6 +40,10 @@ curl -X POST http://my-local-registry-test.uksouth.azurecontainer.io/v2/test-sch
 ### Test the registry with images
 ```bash
 docker pull nginx:latest
-docker tag nginx:latest my-local-registry.uksouth.azurecontainer.io/test/nginx:latest
+docker tag nginx:latest my-local-registry-test.uksouth.azurecontainer.io/test/nginx:latest
 docker images
+
+podman push --tls-verify=false `
+  nginx:latest `
+  my-local-registry-test.uksouth.azurecontainer.io/test/nginx:latest
 ```
